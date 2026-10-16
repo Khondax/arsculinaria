@@ -1,305 +1,81 @@
-# Reglas de Desarrollo para Astro
+# AGENTS.md instructions
 
-Este documento define las directrices de desarrollo del proyecto, alineadas con las skills instaladas y con la estructura real del repositorio.
+Soy Miguel. Eres mi agente. Juntos trabajaremos mucho, por lo que creo que es importante que me presente.
 
-# Comportamiento
+Soy un desarrollador a tiempo completo en una empresa, pero dedico mi tiempo libre a programar, desde pequeños proyectos para sorprender a mi pareja hasta cosas más complejas como una web de reseñas de restaurantes. Me encanta aprender, experimentar con nuevas tecnologías y mejorar mis habilidades de programación. Me considero un desarrollador curioso, apasionado por la tecnología pero también consciente de la importancia de la calidad del código y las buenas prácticas, manteniendo el código lo más limpio y eficiente posible. Prefiero una solución simple antes que una compleja.
 
-Behavioral guidelines to reduce common LLM coding mistakes.
+Quiero compartir algunas de mis preferencias aquí para que podamos estar alineados cuando trabajemos juntos.
 
-## 1. Think Before Coding
+# Reglas generales para agentes de código
 
-Don't assume. Don't hide confusion. Surface tradeoffs.
+Estas reglas sirven como base compartida para los proyectos. Antes de cambiar código, consulta también las instrucciones del proyecto y sus convenciones. Las reglas específicas del proyecto prevalecen cuando aportan contexto concreto o contradicen esta guía.
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+## CodeGraph
 
-## 2. Simplicity First
+En repositorios indexados por CodeGraph (existe un directorio `.codegraph/` en la raíz), usa CodeGraph antes de `grep`, `find` o de leer archivos cuando necesites entender o localizar código:
 
-Minimum code that solves the problem. Nothing speculative.
+- Si está disponible, usa la herramienta MCP `codegraph_explore` para obtener los símbolos relevantes y sus rutas de llamadas, incluidos los saltos de despacho dinámico. Incluye en la consulta el archivo o símbolo que quieras inspeccionar para obtener su fuente actual con números de línea.
+- Si la herramienta indica que un resultado está diferido, cárgalo mediante la herramienta de búsqueda de herramientas disponible.
+- Desde la terminal, `codegraph explore "<símbolos o pregunta>"` ofrece una alternativa.
+- Si no existe `.codegraph/`, omite CodeGraph. La decisión de indexar corresponde al usuario.
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+## Forma de trabajar
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+- Entiende primero la estructura, las tecnologías y los patrones existentes.
+- Piensa antes de codificar: explicita las suposiciones relevantes, señala las alternativas y sus tradeoffs, y pregunta si una ambigüedad impide avanzar con seguridad.
+- No tengas miedo en proponer ideas audaces si pueden beneficiar al proyecto.
+- Si hay una solución más sencilla, indícala. Cuestiona una petición cuando haya una razón concreta para hacerlo.
+- Resuelve lo pedido con el cambio más pequeño que encaje con el proyecto. Evita funciones, abstracciones y configuraciones no solicitadas.
+- Limita los cambios al alcance de la petición. No reformatees ni refactorices código ajeno al cambio.
+- Conserva las convenciones existentes de nombres, formato, arquitectura y dependencias.
+- No añadas dependencias si las capacidades existentes bastan.
+- No afirmes que ejecutaste una comprobación si no la ejecutaste. Resume las comprobaciones pertinentes y sus resultados.
+- Define cómo reconocer que la tarea está terminada y verifica ese criterio. En trabajos con varios pasos, comparte un plan breve con las comprobaciones previstas.
+- Cuando puedas avanzar sin información del usuario, continúa. Acompaña las notas de estado con la acción siguiente. Detente y pregunta solo si no puedes avanzar sin esa respuesta o antes de una acción destructiva, como borrar datos o forzar un push.
+- If a rule here fights the task in front of you, say so loudly and get a human sign-off before breaking it.
 
-## 3. Surgical Changes
+## Código y mantenimiento
 
-Touch only what you must. Clean up only your own mess.
+- Prioriza claridad, legibilidad y soluciones sencillas.
+- Mantén tipos explícitos en interfaces públicas y valida datos en los límites del sistema.
+- Trata errores de forma coherente con el proyecto; no ocultes fallos con valores predeterminados engañosos.
+- Considera accesibilidad, seguridad, rendimiento y compatibilidad según el tipo de cambio.
+- Actualiza la documentación del proyecto en el mismo cambio cuando se modifiquen de forma relevante el comportamiento, la configuración, la arquitectura, los contratos de datos o las instrucciones de uso. Si añades una convención, documéntala en el lugar correspondiente.
+- Si cambian rutas, componentes, módulos, endpoints u otras partes documentadas, actualiza la sección pertinente de la documentación o de las instrucciones del proyecto. No dupliques información ya cubierta por documentación más adecuada.
+- Comments describe how a thing is used, and move when the code moves. To be used mostly to describe functions, not to annotate every line of behavior.
+- Keep comments up to date! When making changes, it's important to keep things in sync.
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+## Match ceremony to the task
 
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+- Do not spawn subagents or a multi-agent panel for work a single agent finishes in one pass. Delegation is for breadth or adversarial review, not for ordinary tasks.
+- When several agents do work in parallel, state file ownership up front so the do not collide.
 
-The test: Every changed line should trace directly to the user's request.
+## Blast radius
 
-## 4. Goal-Driven Execution
+- Never touch production, live databases, or daily-driver build/preview channels unless the user explicitly asks for it. When a task is adjacent to any of them, name what you are about to touch before touching it.
 
-Define success criteria. Loop until verified.
+## A note from Miguel
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+I like ambitious ideas, simple systems, and software that feels obvious. Do not preserve complexity just because it already exists. Do not introduce machinery because it looks architecturally impressive. Understand the real constraint, then fight for the smallest model that makes the correct behavior unsurprising.
 
-For multi-step tasks, state a brief plan:
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+Channel both "measure twice, cut once" and "yagni". Fight scope creep. Try to honor the dev's intent in both a minimal and realistic fashion.
 
----
+The rest of this document is meant to help you navigate the codebase. Think of these instructions less as "hard rules", more as "good defaults". The developer's preferences should be able to override anything here.
 
-## Skills Instaladas en el Proyecto
+## Skills
 
-Skills detectadas en `skills-lock.json`:
+- Revisa `.agents/skills/` para localizar una skill relevante antes de trabajo especializado.
+- Usa las skills cuando apliquen a la tarea; no es necesario cargar todas para cada cambio.
+- Adapta las recomendaciones de una skill a las versiones, dependencias y patrones reales del proyecto.
+- Conserva la estructura completa de cada skill al copiarla: puede incluir referencias y recursos además de `SKILL.md`.
 
-- `accessibility` (addyosmani/web-quality-skills)
-- `astro` (astrolicious/agent-skills)
-- `deploy-to-vercel` (vercel-labs/agent-skills)
-- `frontend-design` (anthropics/skills)
-- `karpathy-guidelines` (multica-ai/andrej-karpathy-skills)
-- `nodejs-backend-patterns` (wshobson/agents)
-- `nodejs-best-practices` (sickn33/antigravity-awesome-skills)
-- `seo` (addyosmani/web-quality-skills)
-- `tailwind-css-patterns` (giuseppe-trisciuoglio/developer-kit)
-- `typescript-advanced-types` (wshobson/agents)
-- `vitest` (antfu/skills)
+## Estándar visual
 
-### Cuándo usar cada skill
+`design-taste-frontend` es la skill predeterminada para diseño frontend en todos los proyectos.
 
-- UI y diseño visual: prioriza `frontend-design`; si usas utilidades CSS, combina con `tailwind-css-patterns`.
-- Desarrollo Astro: usa `astro` para rutas dinámicas, islands, markdown/MDX y assets.
-- API y lógica de servidor: usa `nodejs-backend-patterns` y `nodejs-best-practices` en endpoints de `src/pages/api`.
-- Calidad de ejecución del agente: usa `karpathy-guidelines` para evitar sobreingeniería, hacer cambios quirúrgicos y definir criterios de verificación.
-- Tipado: usa `typescript-advanced-types` para contratos, utilidades y tipos genéricos complejos.
-- Calidad web: usa `accessibility` y `seo` como parte de la revisión previa a release.
-- Pruebas: usa `vitest` para tests unitarios y validación de contenido.
-- Deploy: usa `deploy-to-vercel` para despliegues preview y producción.
+## Verificación
 
----
-
-## Documentación de Carpetas en /src
-
-Todas las carpetas bajo `src/` deben tener propósito claro, responsabilidad única y convenciones consistentes.
-
-### `src/components/`
-
-Contiene componentes reutilizables de UI en Astro (`.astro`) como cabecera, pie, tarjetas, embeds y utilidades de render.
-
-Incluye ejemplos actuales: `BaseHead.astro`, `CardReview.astro`, `ContentTable.astro`, `Footer.astro`, `Header.astro`, `InstagramEmbed.astro`, `Newsletter.astro`, `ShareButtons.astro`, `ThemeToggle.astro`.
-
-Recomendaciones:
-
-- Mantener componentes pequeños, con una responsabilidad principal.
-- Tipar siempre `Astro.props`.
-- Evitar lógica de negocio compleja dentro del marcado.
-
-### `src/content/`
-
-Almacena contenido editorial y pruebas de integridad de colecciones.
-
-Incluye ejemplos actuales: `reviews.test.ts` y subcarpetas `recipes/`, `reviews/`.
-
-Recomendaciones:
-
-- Frontmatter consistente entre archivos de una misma colección.
-- Validación de esquemas en `content.config.ts`.
-- Evitar mezclar código de UI dentro del contenido.
-
-### `src/content/recipes/`
-
-Contiene recetas en formato Markdown.
-
-Recomendaciones:
-
-- Mantener metadatos homogéneos.
-- Usar slugs semánticos y estables.
-
-### `src/content/reviews/`
-
-Contiene reseñas en formato MDX/Markdown.
-
-Recomendaciones:
-
-- Incluir siempre campos SEO y de publicación obligatorios.
-- Revisar accesibilidad de imágenes y embeds.
-- Mantener una estructura editorial consistente entre reseñas: introducción, local, propuesta gastronómica, platos, servicio y conclusión.
-- Usar la plantilla base en `src/content/templates/restaurant-review-template.md` como punto de partida antes de crear nuevas reseñas.
-
-### `src/content/templates/`
-
-Contiene plantillas editoriales reutilizables para crear contenido nuevo sin afectar directamente a las colecciones publicadas.
-
-Recomendaciones:
-
-- Guardar aquí las bases de nuevas reseñas, artículos o formatos repetibles.
-- Mantener ejemplos de frontmatter alineados con `content.config.ts`.
-- Incluir snippets listos para copiar de imágenes, secciones y buenas prácticas de redacción.
-
-### `src/layouts/`
-
-Layouts reutilizables para páginas de contenido (por ejemplo, posts/reviews).
-
-Recomendaciones:
-
-- Centralizar estructura compartida para evitar duplicación.
-- Mantener interfaz de props simple y explícita.
-
-### `src/pages/`
-
-Define el enrutado del sitio con file-based routing.
-
-Contiene páginas estáticas, rutas dinámicas y subcarpetas funcionales.
-
-Recomendaciones:
-
-- Mantener en páginas la lógica mínima de orquestación.
-- Mover lógica reutilizable a componentes o utilidades.
-
-### `src/pages/api/`
-
-Endpoints server-side para integraciones y datos (por ejemplo, métricas externas).
-
-Recomendaciones:
-
-- Validar entrada/salida y devolver códigos HTTP correctos.
-- Gestionar errores con respuestas controladas.
-- No exponer secretos en el código.
-
-### `src/pages/recipes/`
-
-Rutas de recetas (listado y detalle dinámico).
-
-Recomendaciones:
-
-- Asegurar `getStaticPaths` determinista y tipado.
-- Definir fallback visual para datos opcionales.
-
-### `src/pages/reviews/`
-
-Rutas de reseñas (listado y detalle dinámico).
-
-Recomendaciones:
-
-- Reutilizar componentes de tarjeta y meta para consistencia.
-- Cuidar SEO por página: título, descripción y canonical.
-
-### `src/styles/`
-
-Estilos globales y tokens de diseño.
-
-Recomendaciones:
-
-- Definir variables CSS para color, spacing y tipografía.
-- Evitar reglas globales demasiado invasivas.
-
-### `src/types/`
-
-Tipos de dominio e interfaces TypeScript compartidas.
-
-Recomendaciones:
-
-- Evitar `any`; preferir tipos explícitos o `unknown`.
-- Mantener tipos alineados con el modelo de datos real.
-
----
-
-## Buenas Prácticas de Programación
-
-### Política de Documentación por Cambios Relevantes
-
-- Todo cambio relevante en el código debe incluir actualización de documentación en el mismo PR/commit.
-- La documentación debe seguir los esquemas ya definidos en este documento: estructura por carpeta en `src/`, buenas prácticas por dominio (Astro, TypeScript, API, SEO/accesibilidad, testing) y checklist pre-commit.
-- Si se crea o modifica una ruta, componente, layout, colección o endpoint, debe actualizarse la sección correspondiente en `agents.md`.
-- Si cambia el modelo de datos, contratos o validaciones, deben actualizarse tipos (`src/types/`) y documentación de reglas afectadas.
-- Si se incorpora una nueva convención, añadirla en la sección de buenas prácticas aplicable y en checklist si impacta calidad o release.
-
-### Astro
-
-- Mantener separación clara entre frontmatter y template.
-- Preferir componentes presentacionales reutilizables.
-- Hidratar solo lo necesario (islands) para mejorar rendimiento.
-
-### TypeScript
-
-- Mantener `strict: true`.
-- Tipar props, respuestas de APIs y utilidades.
-- Evitar tipos implícitos en funciones públicas.
-
-### Contenido y Datos
-
-- Definir schemas con Zod para cada colección.
-- Estandarizar frontmatter y validar fechas/campos opcionales.
-- Evitar duplicidad de datos entre markdown y código.
-
-### API y Backend
-
-- Validar request params y payloads.
-- Manejar errores con estructura de respuesta consistente.
-- Añadir timeouts y control de fallos en llamadas externas.
-
-### SEO y Accesibilidad
-
-- Incluir metadatos base y Open Graph en todas las páginas indexables.
-- Mantener jerarquía correcta de headings (h1-h2-h3).
-- Asegurar `alt` descriptivo en imágenes.
-- Verificar navegación por teclado y contraste.
-
-### Testing
-
-- Escribir tests unitarios para utilidades y validaciones.
-- Testear colecciones (`src/content`) para detectar frontmatter inválido.
-- Ejecutar pruebas antes de cada merge.
-
----
-
-## Comandos Útiles
-
-```bash
-# Desarrollo
-npm run dev
-npm run build
-npm run preview
-
-# Testing
-npm run test
-npm run test:run
-npm run test:coverage
-
-# Calidad
-npm run lint
-npm run format
-```
-
----
-
-## Checklist Pre-Commit
-
-- [ ] Tests pasando
-- [ ] Sin errores TypeScript
-- [ ] Sin warnings críticos de lint
-- [ ] Formato aplicado
-- [ ] Metadatos SEO revisados
-- [ ] Accesibilidad básica verificada
-- [ ] Validación de contenido (colecciones) completada
-
----
-
-## Recursos
-
-- Astro Docs: https://docs.astro.build
-- Astro Content Collections: https://docs.astro.build/en/guides/content-collections/
-- Vitest: https://vitest.dev/
-- Playwright: https://playwright.dev/
+- Identifica cómo se comprueba el cambio en el proyecto (por ejemplo, tests, lint, tipos o build).
+- Ejecuta las comprobaciones adecuadas al alcance y al entorno disponible.
+- Si no puedes verificarlas, indica qué quedó sin comprobar y por qué.
+- Para cambios de varios pasos, trabaja contra criterios de éxito verificables y repite el ciclo de ajuste y comprobación hasta cumplirlos o dejar claro el bloqueo.
