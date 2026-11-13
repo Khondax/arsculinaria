@@ -1,3 +1,29 @@
+# ARS CULINARIA
+
+# Recursos empleados para agentes
+## Habilidades:
+### Rendimiento:
+- `karpathy-guidelines` (multica-ai/andrej-karpathy-skills)
+### Buenas prácticas y patrones de programación:
+- `nodejs-backend-patterns` (wshobson/agents)
+- `nodejs-best-practices` (sickn33/antigravity-awesome-skills)
+- `tailwind-css-patterns` (giuseppe-trisciuoglio/developer-kit)
+- `typescript-advanced-types` (wshobson/agents)
+- `vitest` (antfu/skills)
+- `seo` (addyosmani/web-quality-skills)
+- `deploy-to-vercel` (vercel-labs/agent-skills)
+### Diseño:
+- `accessibility` (addyosmani/web-quality-skills)
+- `astro` (astrolicious/agent-skills)
+- `design-taste-frontend` (Leonxlnx/taste-skill)
+
+## MCPs:
+- `Stitch` -> Para diseño del frontal
+
+## Herramientas:
+- `Codegraph` -> Para crear una base de conocimientos indexados y reducir el uso de tokens
+- `Improve` -> Para elaborar planes de mejora (Shadcn/improve)
+
 # Tareas pendientes ✅❌
 - ✅❌ Retocar la landing page, poner las 10 últimas reseñas destacadas?
 - ✅ Buscador con filtros (nombre, categoría, precio y orden) · ❌ mapa
@@ -62,13 +88,17 @@ Todos los comandos se ejecutan desde la raiz del proyecto, en una terminal indic
 
 | Command                   | Action                                                       |
 | :------------------------ | :----------------------------------------------------------- |
-| `npm install`             | Instala dependencias                                         |
-| `npm run dev`             | Inicia el servidor local de desarrollo en `localhost:4321`   |
-| `npm run build`           | Compila la versión de producción en `./dist/`                |
-| `npm run preview`         | Vista previa de tu build, antes del despliegue               |
-| `npm run check`           | Comprueba tipos y errores en los ficheros `.astro` y `.ts`   |
-| `npm run astro ...`       | Ejecuta comandos de Astro como `astro add...`, `astro check` |
-| `npm run astro -- --help` | Obtiene ayuda de los comandos de Astro                       |
+| `pnpm install`            | Instala dependencias                                         |
+| `pnpm dev`                | Inicia el servidor local de desarrollo en `localhost:4321`   |
+| `pnpm build`              | Compila la versión de producción en `./.vercel/output/`      |
+| `pnpm test`               | Ejecuta los tests en modo watch (Vitest)                     |
+| `pnpm test:run`           | Ejecuta los tests una sola vez                               |
+| `pnpm check`              | Comprueba tipos y errores en los ficheros `.astro` y `.ts`   |
+| `pnpm astro ...`          | Ejecuta comandos de Astro como `astro add...`, `astro check` |
+
+El build usa el adaptador de Vercel (con Web Analytics), que no admite `astro preview`. Los tests de
+`src/content/reviews.test.ts` validan el frontmatter de cada reseña contra el esquema compartido de
+`src/content/review-schema.ts`. El CI (`.github/workflows/ci.yml`) ejecuta `check`, `test:run` y `build`.
 
 
 ## Créditos
