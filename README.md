@@ -16,6 +16,7 @@
 - `accessibility` (addyosmani/web-quality-skills)
 - `astro` (astrolicious/agent-skills)
 - `frontend-design` (anthropics/skills)
+- `design-taste-frontend` (Leonxlnx/taste-skill; prototipos y exploraciones puntuales)
 
 ## MCPs:
 - `Stitch` -> Para diseño del frontal
@@ -190,15 +191,15 @@ All commands are run from the root of the project, from a terminal:
 
 | Command                   | Action                                                       |
 | :------------------------ | :----------------------------------------------------------- |
-| `npm install`             | Instala dependencias                                         |
-| `npm run dev`             | Inicia el servidor local de desarrollo en `localhost:4321`   |
-| `npm run build`           | Compila la versión de producción en `./dist/`                |
-| `npm run preview`         | Vista previa de tu build, antes del despliegue               |
-| `npm run test`            | Ejecuta tests en modo watch (Vitest)                         |
-| `npm run test:run`        | Ejecuta tests una sola vez                                   |
-| `npm run test:coverage`   | Tests con reporte de cobertura                               |
-| `npm run check`           | Type-check con `astro check`                                 |
-| `npm run astro ...`       | Ejecuta comandos de Astro como `astro add...`, `astro check` |
+| `pnpm install`            | Instala dependencias                                         |
+| `pnpm dev`                | Inicia el servidor local de desarrollo en `localhost:4321`   |
+| `pnpm build`              | Compila la versión de producción en `./dist/`                |
+| `pnpm preview`            | Vista previa de tu build, antes del despliegue               |
+| `pnpm test`               | Ejecuta tests en modo watch (Vitest)                         |
+| `pnpm test:run`           | Ejecuta tests una sola vez                                   |
+| `pnpm test:coverage`      | Tests con reporte de cobertura                               |
+| `pnpm check`              | Type-check con `astro check`                                 |
+| `pnpm astro ...`          | Ejecuta comandos de Astro como `astro add...`, `astro check` |
 
 
 ## Créditos
