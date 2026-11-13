@@ -2,7 +2,7 @@
 import PageHeader from '../../components/PageHeader.astro';
 import PostCard from '../../components/PostCard.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getReviews } from '../../lib/content';
+import { getReviews, reviewCardProps } from '../../lib/content';
 
 const reviews = await getReviews();
 ---
@@ -13,12 +13,14 @@ const reviews = await getReviews();
 		title="Todas nuestras mesas"
 		intro="Cada sitio que hemos probado, del más reciente al más antiguo, contado con sinceridad."
 	>
-		<a
-			href="/buscador"
-			class="mt-8 inline-flex items-center gap-2 text-sm font-medium text-accent transition-colors hover:text-accent-dark"
-		>
-			¿Buscas algo concreto? Usa el buscador <span aria-hidden="true">→</span>
-		</a>
+		<div class="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm font-medium">
+			<a href="/buscador" class="inline-flex items-center gap-2 text-accent transition-colors hover:text-accent-dark">
+				¿Buscas algo concreto? Usa el buscador <span aria-hidden="true">→</span>
+			</a>
+			<a href="/categorias" class="inline-flex items-center gap-2 text-accent transition-colors hover:text-accent-dark">
+				Explorar por categoría <span aria-hidden="true">→</span>
+			</a>
+		</div>
 	</PageHeader>
 
 	<section class="container-page" aria-label="Listado de reseñas">
@@ -26,13 +28,7 @@ const reviews = await getReviews();
 			{
 				reviews.map((review, index) => (
 					<PostCard
-						href={`/reviews/${review.id}/`}
-						title={review.data.title}
-						description={review.data.description}
-						date={review.data.pubDate}
-						image={review.data.image}
-						averagePrice={review.data.averagePrice}
-						categories={review.data.categoryArray}
+						{...reviewCardProps(review)}
 						headingLevel="h2"
 						priority={index < 3}
 					/>

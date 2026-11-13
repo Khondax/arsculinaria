@@ -1,9 +1,12 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import { render } from 'astro:content';
+import InstagramEmbed from '../../components/InstagramEmbed.astro';
 import PostCard from '../../components/PostCard.astro';
+import ReviewFacts from '../../components/ReviewFacts.astro';
+import ShareButtons from '../../components/ShareButtons.astro';
 import PostLayout from '../../layouts/PostLayout.astro';
-import { getRelatedReviews, getReviews, type Review } from '../../lib/content';
+import { getRelatedReviews, getReviews, reviewCardProps, type Review } from '../../lib/content';
 
 export const getStaticPaths = (async () => {
 	const reviews = await getReviews();
@@ -21,6 +24,9 @@ interface Props {
 const { review, related } = Astro.props;
 const { Content } = await render(review);
 const { data } = review;
+
+const badges = [data.favorite && 'Favorito', data.trending && 'Tendencia'].filter((b): b is string => Boolean(b));
+const shareUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <PostLayout
@@ -28,13 +34,30 @@ const { data } = review;
 	description={data.description}
 	pubDate={data.pubDate}
 	updatedDate={data.updatedDate}
-	visitDate={data.visitDate}
 	image={data.image}
-	averagePrice={data.averagePrice}
 	categories={data.categoryArray}
+	badges={badges}
 	back={{ href: '/reviews', label: 'Todas las reseñas' }}
 >
+	<ReviewFacts slot="aside" data={data} />
+
+	{
+		data.anecdote && (
+			<aside slot="lead" class="mb-12 rounded-2xl bg-accent-soft px-6 py-5">
+				<p class="eyebrow">Anécdota</p>
+				<p class="mt-2 font-display text-xl leading-relaxed text-ink italic">{data.anecdote}</p>
+			</aside>
+		)
+	}
+
 	<Content />
+
+	<Fragment slot="end">
+		{data.instagramPostId && <InstagramEmbed post={data.instagramPostId} />}
+		<div class="mt-12 border-t border-line pt-8">
+			<ShareButtons url={shareUrl} title={data.title} />
+		</div>
+	</Fragment>
 
 	{
 		related.length > 0 && (
@@ -47,15 +70,7 @@ const { data } = review;
 				</div>
 				<div class="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
 					{related.map((r) => (
-						<PostCard
-							href={`/reviews/${r.id}/`}
-							title={r.data.title}
-							description={r.data.description}
-							date={r.data.pubDate}
-							image={r.data.image}
-							averagePrice={r.data.averagePrice}
-							categories={r.data.categoryArray}
-						/>
+						<PostCard {...reviewCardProps(r)} />
 					))}
 				</div>
 			</section>

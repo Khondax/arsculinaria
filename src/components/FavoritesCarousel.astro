@@ -1,0 +1,233 @@
+---
+/**
+ * Carrusel de reseñas favoritas.
+ *
+ * A la izquierda, la favorita destacada: cambia cada 5 s con un fundido y una barra de progreso.
+ * A la derecha, la lista de favoritas hace de selector; si no cabe, se desplaza en bucle.
+ * Se pausa al pasar el ratón o el foco por una tarjeta, y no se mueve con `prefers-reduced-motion`.
+ * Sin JS se ve la primera favorita y la lista enlaza a cada reseña.
+ */
+import { Image } from 'astro:assets';
+import Logo from './Logo.astro';
+import PostCard from './PostCard.astro';
+import { formatCategory, reviewCardProps, reviewScore, type Review } from '../lib/content';
+import { formatScore } from '../lib/rating';
+
+interface Props {
+	favorites: Review[];
+}
+
+const { favorites } = Astro.props;
+---
+
+{
+	favorites.length > 0 && (
+		<div class="grid gap-8 lg:grid-cols-5 lg:gap-10" data-favorites>
+			<div class="relative lg:col-span-3">
+				<div class="grid">
+					{favorites.map((review, index) => (
+						<div
+							class:list={['fav-slide [grid-area:1/1]', index === 0 && 'is-active']}
+							data-slide={index}
+							inert={index !== 0}
+						>
+							<PostCard {...reviewCardProps(review)} />
+						</div>
+					))}
+				</div>
+				{favorites.length > 1 && (
+					<div class="mt-6 h-0.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
+						<div class="fav-progress h-full bg-accent" data-progress />
+					</div>
+				)}
+			</div>
+
+			<div class="lg:col-span-2">
+				<p class="text-xs font-medium tracking-wide text-muted uppercase">Elige una</p>
+				<div class="fav-viewport relative mt-4 max-h-[28rem] overflow-hidden" data-viewport>
+					<ul class="flex flex-col gap-3" data-track>
+						{favorites.map((review, index) => {
+							const { title, image, locality, categoryArray } = review.data;
+							const score = reviewScore(review);
+							return (
+								<li>
+									<a
+										href={`/reviews/${review.id}/`}
+										class:list={[
+											'fav-item flex items-center gap-4 rounded-2xl border border-line bg-surface p-3 transition-colors hover:border-ink',
+											index === 0 && 'is-active',
+										]}
+										data-select={index}
+										aria-current={index === 0 ? 'true' : undefined}
+									>
+										<div class="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-sand">
+											{image ? (
+												<Image src={image} alt="" width={160} height={128} class="size-full object-cover" />
+											) : (
+												<div class="grid size-full place-items-center">
+													<Logo class="size-6 opacity-40" />
+												</div>
+											)}
+										</div>
+										<div class="min-w-0 flex-1">
+											{categoryArray[0] && (
+												<p class="truncate text-xs font-medium tracking-wide text-accent uppercase">
+													{formatCategory(categoryArray[0])}
+												</p>
+											)}
+											<p class="truncate font-display text-lg text-ink">{title}</p>
+											<p class="truncate text-xs text-muted">{locality}</p>
+										</div>
+										{score !== undefined && (
+											<p class="shrink-0 font-display text-xl text-ink">
+												<span class="sr-only">Nota: </span>
+												{formatScore(score)}
+											</p>
+										)}
+									</a>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+<style is:global>
+	/* Globales: el script clona los elementos de la lista, y los estilos con ámbito no les llegan. */
+	.fav-slide {
+		opacity: 0;
+		pointer-events: none;
+	}
+	.fav-slide.is-active {
+		opacity: 1;
+		pointer-events: auto;
+	}
+	.fav-item.is-active {
+		border-color: var(--color-accent);
+		background-color: var(--color-accent-soft);
+	}
+	.fav-viewport.is-scrolling {
+		mask-image: linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.fav-slide {
+			transition: opacity 900ms var(--ease-out-soft);
+		}
+		.fav-progress {
+			transform: scaleX(0);
+			transform-origin: left;
+		}
+		.fav-progress.is-running {
+			animation: fav-progress var(--fav-interval) linear forwards;
+		}
+	}
+
+	@keyframes fav-progress {
+		to {
+			transform: scaleX(1);
+		}
+	}
+</style>
+
+<script>
+	const INTERVAL = 5000;
+	const SCROLL_PX_PER_SECOND = 24;
+
+	const root = document.querySelector<HTMLElement>('[data-favorites]');
+	const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	if (root) {
+		const slides = [...root.querySelectorAll<HTMLElement>('[data-slide]')];
+		const progress = root.querySelector<HTMLElement>('[data-progress]');
+		const viewport = root.querySelector<HTMLElement>('[data-viewport]');
+		const track = root.querySelector<HTMLElement>('[data-track]');
+		let current = 0;
+		let timer: number | undefined;
+		let hovering = false;
+		let scroll: Animation | undefined;
+
+		const restartProgress = () => {
+			if (!progress) return;
+			progress.style.setProperty('--fav-interval', `${INTERVAL}ms`);
+			progress.classList.remove('is-running');
+			void progress.offsetWidth; // reinicia la animación
+			progress.classList.add('is-running');
+			progress.style.animationPlayState = hovering ? 'paused' : 'running';
+		};
+
+		const show = (index: number) => {
+			current = (index + slides.length) % slides.length;
+			slides.forEach((slide, i) => {
+				slide.classList.toggle('is-active', i === current);
+				slide.inert = i !== current;
+			});
+			root.querySelectorAll<HTMLElement>('[data-select]').forEach((item) => {
+				const active = Number(item.dataset.select) === current;
+				item.classList.toggle('is-active', active);
+				if (active) item.setAttribute('aria-current', 'true');
+				else item.removeAttribute('aria-current');
+			});
+			restartProgress();
+		};
+
+		const stop = () => window.clearInterval(timer);
+		const start = () => {
+			stop();
+			if (slides.length < 2 || reduceMotion || hovering || document.hidden) return;
+			timer = window.setInterval(() => show(current + 1), INTERVAL);
+			restartProgress();
+		};
+
+		const setHovering = (value: boolean) => {
+			hovering = value;
+			if (progress) progress.style.animationPlayState = value ? 'paused' : 'running';
+			if (value) {
+				stop();
+				scroll?.pause();
+			} else {
+				scroll?.play();
+				start();
+			}
+		};
+
+		// Si la lista no cabe, se duplica y se desplaza en bucle continuo.
+		if (viewport && track && !reduceMotion && track.scrollHeight > viewport.clientHeight) {
+			const gap = parseFloat(getComputedStyle(track).rowGap) || 0;
+			const distance = track.scrollHeight + gap;
+			for (const item of [...track.children]) {
+				const clone = item.cloneNode(true) as HTMLElement;
+				clone.setAttribute('aria-hidden', 'true');
+				clone.querySelector('a')?.setAttribute('tabindex', '-1');
+				track.append(clone);
+			}
+			viewport.classList.add('is-scrolling');
+			scroll = track.animate([{ transform: 'translateY(0)' }, { transform: `translateY(-${distance}px)` }], {
+				duration: (distance / SCROLL_PX_PER_SECOND) * 1000,
+				iterations: Infinity,
+			});
+		}
+
+		// Con JS, cada elemento de la lista elige la destacada en vez de abrir la reseña.
+		root.addEventListener('click', (event) => {
+			const item = (event.target as Element).closest<HTMLElement>('[data-select]');
+			if (!item) return;
+			event.preventDefault();
+			show(Number(item.dataset.select));
+			start();
+		});
+
+		const isCard = (target: EventTarget | null) =>
+			target instanceof Element && Boolean(target.closest('[data-slide], [data-select]'));
+		root.addEventListener('pointerover', (event) => isCard(event.target) && setHovering(true));
+		root.addEventListener('pointerout', (event) => !isCard(event.relatedTarget) && setHovering(false));
+		root.addEventListener('focusin', () => setHovering(true));
+		root.addEventListener('focusout', (event) => !root.contains(event.relatedTarget as Node) && setHovering(false));
+		document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+
+		start();
+	}
+</script>

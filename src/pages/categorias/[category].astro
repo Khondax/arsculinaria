@@ -1,0 +1,40 @@
+---
+import type { GetStaticPaths } from 'astro';
+import PageHeader from '../../components/PageHeader.astro';
+import PostCard from '../../components/PostCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getReviews, groupByCategory, reviewCardProps, type CategoryGroup } from '../../lib/content';
+
+export const getStaticPaths = (async () => {
+	const groups = groupByCategory(await getReviews());
+	return groups.map((group) => ({ params: { category: group.slug }, props: { group } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+	group: CategoryGroup;
+}
+
+const { group } = Astro.props;
+const count = group.reviews.length;
+---
+
+<BaseLayout title={group.name} description={`Nuestras reseñas de restaurantes de la categoría ${group.name}.`}>
+	<PageHeader eyebrow={`${count} ${count === 1 ? 'reseña' : 'reseñas'}`} title={group.name}>
+		<a
+			href="/categorias"
+			class="mt-8 inline-flex items-center gap-2 text-sm font-medium text-accent transition-colors hover:text-accent-dark"
+		>
+			<span aria-hidden="true">←</span> Todas las categorías
+		</a>
+	</PageHeader>
+
+	<section class="container-page" aria-label={`Reseñas de ${group.name}`}>
+		<div class="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+			{
+				group.reviews.map((review, index) => (
+					<PostCard {...reviewCardProps(review)} headingLevel="h2" priority={index < 3} />
+				))
+			}
+		</div>
+	</section>
+</BaseLayout>

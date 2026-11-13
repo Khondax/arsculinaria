@@ -1,6 +1,6 @@
 // Datos globales del sitio. Se pueden importar desde cualquier componente o página.
 
-export const SITE_TITLE = 'Mesa para MiLu';
+export const SITE_TITLE = 'ArsCulinaria';
 export const SITE_DESCRIPTION =
 	'Reseñas honestas de restaurantes en Gran Canaria y allá donde viajemos, escritas por Miguel y Lucía.';
 export const SITE_LOCALE = 'es-ES';
@@ -8,6 +8,7 @@ export const SITE_LOCALE = 'es-ES';
 export const NAV_LINKS = [
 	{ href: '/reviews', label: 'Reseñas' },
 	{ href: '/buscador', label: 'Buscador' },
+	{ href: '/suggestions', label: 'Por visitar' },
 	{ href: '/recipes', label: 'Recetas' },
 	{ href: '/about', label: 'Sobre nosotros' },
 ] as const;

@@ -5,6 +5,7 @@ import FormattedDate from '../components/FormattedDate.astro';
 import PriceLevel from '../components/PriceLevel.astro';
 import BaseLayout from './BaseLayout.astro';
 import { formatCategory, formatPrice } from '../lib/content';
+import { categorySlug } from '../lib/slug';
 
 interface Props {
 	title: string;
@@ -14,9 +15,15 @@ interface Props {
 	visitDate?: Date;
 	image?: ImageMetadata;
 	averagePrice?: number;
+	/** Se enlazan a su página en `/categorias`. */
 	categories?: string[];
+	/** Etiquetas junto a la fecha, como «Favorito». */
+	badges?: string[];
 	back: { href: string; label: string };
 }
+
+// Slots con nombre: `lead` (antes del texto), `end` (tras el texto), `aside` (columna lateral fija
+// en pantallas anchas y antes del texto en móvil) y `after` (fuera del artículo).
 
 const {
 	title,
@@ -27,10 +34,12 @@ const {
 	image,
 	averagePrice,
 	categories = [],
+	badges = [],
 	back,
 } = Astro.props;
 
 const hasFacts = Boolean(visitDate || averagePrice);
+const hasAside = Astro.slots.has('aside');
 ---
 
 <BaseLayout title={title} description={description} image={image} type="article">
@@ -49,8 +58,13 @@ const hasFacts = Boolean(visitDate || averagePrice);
 					categories.length > 0 && (
 						<ul class="flex flex-wrap justify-center gap-2" aria-label="Categorías">
 							{categories.map((category) => (
-								<li class="rounded-full bg-accent-soft px-3 py-1 text-xs font-medium tracking-wide text-accent-dark uppercase">
-									{formatCategory(category)}
+								<li>
+									<a
+										href={`/categorias/${categorySlug(category)}/`}
+										class="block rounded-full bg-accent-soft px-3 py-1 text-xs font-medium tracking-wide text-accent-dark uppercase transition-colors hover:bg-accent hover:text-paper"
+									>
+										{formatCategory(category)}
+									</a>
 								</li>
 							))}
 						</ul>
@@ -69,6 +83,17 @@ const hasFacts = Boolean(visitDate || averagePrice);
 						)
 					}
 				</p>
+				{
+					badges.length > 0 && (
+						<ul class="mt-4 flex flex-wrap justify-center gap-2" aria-label="Distinciones">
+							{badges.map((badge) => (
+								<li class="rounded-full border border-accent px-3 py-1 text-xs font-semibold tracking-wide text-accent uppercase">
+									{badge}
+								</li>
+							))}
+						</ul>
+					)
+				}
 			</div>
 		</header>
 
@@ -89,41 +114,59 @@ const hasFacts = Boolean(visitDate || averagePrice);
 		}
 
 		<div class="container-page mt-12 md:mt-16">
-			<div class="mx-auto max-w-[68ch]">
+			<div
+				class:list={[
+					'mx-auto',
+					hasAside ? 'grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16' : 'max-w-[68ch]',
+				]}
+			>
 				{
-					hasFacts && (
-						<dl
-							class:list={[
-								'mb-12 grid rounded-2xl border border-line bg-surface',
-								visitDate && averagePrice && 'grid-cols-2 divide-x divide-line',
-							]}
-						>
-							{visitDate && (
-								<div class="px-5 py-4">
-									<dt class="eyebrow text-[0.68rem] text-muted">Visitado</dt>
-									<dd class="mt-1 font-display text-lg text-ink">
-										<FormattedDate date={visitDate} />
-									</dd>
-								</div>
-							)}
-							{averagePrice && (
-								<div class="px-5 py-4">
-									<dt class="eyebrow text-[0.68rem] text-muted">Precio medio</dt>
-									<dd class="mt-1 flex items-baseline gap-2 font-display text-lg text-ink">
-										{formatPrice(averagePrice)}
-										<span class="font-sans text-sm text-muted">/ persona</span>
-										<span aria-hidden="true" class="ml-auto font-sans text-sm text-accent">
-											<PriceLevel price={averagePrice} />
-										</span>
-									</dd>
-								</div>
-							)}
-						</dl>
+					hasAside && (
+						<aside class="lg:sticky lg:top-24 lg:order-last lg:self-start">
+							<slot name="aside" />
+						</aside>
 					)
 				}
+				<div class="min-w-0">
+					{
+						hasFacts && (
+							<dl
+								class:list={[
+									'mb-12 grid rounded-2xl border border-line bg-surface',
+									visitDate && averagePrice && 'grid-cols-2 divide-x divide-line',
+								]}
+							>
+								{visitDate && (
+									<div class="px-5 py-4">
+										<dt class="eyebrow text-[0.68rem] text-muted">Visitado</dt>
+										<dd class="mt-1 font-display text-lg text-ink">
+											<FormattedDate date={visitDate} />
+										</dd>
+									</div>
+								)}
+								{averagePrice && (
+									<div class="px-5 py-4">
+										<dt class="eyebrow text-[0.68rem] text-muted">Precio medio</dt>
+										<dd class="mt-1 flex items-baseline gap-2 font-display text-lg text-ink">
+											{formatPrice(averagePrice)}
+											<span class="font-sans text-sm text-muted">/ persona</span>
+											<span aria-hidden="true" class="ml-auto font-sans text-sm text-accent">
+												<PriceLevel price={averagePrice} />
+											</span>
+										</dd>
+									</div>
+								)}
+							</dl>
+						)
+					}
 
-				<div class="prose">
-					<slot />
+					<slot name="lead" />
+
+					<div class="prose">
+						<slot />
+					</div>
+
+					<slot name="end" />
 				</div>
 			</div>
 		</div>

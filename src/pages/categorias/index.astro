@@ -1,0 +1,35 @@
+---
+import PageHeader from '../../components/PageHeader.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getReviews, groupByCategory } from '../../lib/content';
+
+const groups = groupByCategory(await getReviews());
+---
+
+<BaseLayout title="Categorías" description="Nuestras reseñas agrupadas por tipo de cocina.">
+	<PageHeader
+		eyebrow={`${groups.length} ${groups.length === 1 ? 'categoría' : 'categorías'}`}
+		title="Por tipo de cocina"
+		intro="Elige una categoría para ver todas las reseñas que la comparten."
+	/>
+
+	<section class="container-page" aria-label="Categorías">
+		<ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			{
+				groups.map((group) => (
+					<li>
+						<a
+							href={`/categorias/${group.slug}/`}
+							class="group flex items-baseline justify-between gap-4 rounded-2xl border border-line bg-surface px-6 py-5 transition-colors hover:border-ink"
+						>
+							<span class="font-display text-2xl text-ink transition-colors group-hover:text-accent">{group.name}</span>
+							<span class="shrink-0 text-sm text-muted">
+								{group.reviews.length} {group.reviews.length === 1 ? 'reseña' : 'reseñas'}
+							</span>
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+</BaseLayout>

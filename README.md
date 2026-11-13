@@ -1,4 +1,8 @@
-# ARS CULINARIA
+# ArsCulinaria
+
+Reseñas de restaurantes de Miguel y Lucía. Páginas: portada (destacadas, favoritos y últimas), reseñas,
+categorías (`/categorias`), buscador con mapa (`/buscador`), «Por visitar» (`/suggestions`), recetas y
+sobre nosotros.
 
 # Recursos empleados para agentes
 ## Habilidades:
@@ -26,10 +30,11 @@
 
 # Tareas pendientes ✅❌
 - ✅❌ Retocar la landing page, poner las 10 últimas reseñas destacadas?
-- ✅ Buscador con filtros (nombre, categoría, precio y orden) · ❌ mapa
+- ✅ Buscador con filtros (nombre, localidad, categoría, precio y orden), «Sorpréndeme» y mapa
 - ❌ Mejorar estilos y "sobre nosotros", añadir info sobre nosotros pero yo no se si quiero mi perfil
       en redes (aunque se pueda alcanzar)
-- ❌ Integración con redes sociales?
+- ✅❌ Integración con redes sociales: compartir y publicación de Instagram en cada reseña; faltan
+      las visualizaciones (configurar `INSTAGRAM_ACCESS_TOKEN` en Vercel)
 - ❌ Despliegue automático en vercel/otros? con github actions
 - ❌ Añadir métricas de uso/clicks
 
@@ -55,31 +60,49 @@ Astro busca los ficheros `.astro` o `.md` en `src/pages/`. Cada página se expon
 
 En la carpeta `src/components/` se cargarán los diferentes componentes como `header`, `footer` o las tarjetas (de Astro) como `CardReview`, pero admite cualquier componente de Astro/React/Vue/Svelte/Preact.
 
-El directorio `src/content/` contiene "colecciones" de documentos Markdown y MDX. Usa `getCollection()` para obtener los posts de `src/content/reviews/`. Recuerda verificar el esquema y lo ideal es usar un tipado fuerte. Aquí la documentación [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/).
+El directorio `src/content/` contiene las colecciones de Markdown y MDX: `reviews/`, `suggestions/` (restaurantes
+por visitar) y `recipes/`. Los esquemas están en `src/content.config.ts`, que reutiliza los campos de
+`review-schema.ts` y `suggestion-schema.ts`. Las funciones para leerlas están en `src/lib/content.ts`. Aquí la
+documentación [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/).
 
 Las imágenes de reseñas y recetas van en `src/assets/images/` para que Astro las optimice
 (redimensiona y convierte a WebP). Los ficheros que deban servirse tal cual (favicon, etc.) van en `public/`.
 
-## ✍️ Añadir una reseña
+## ✍️ Añadir una reseña o una sugerencia
 
-Crea un fichero en `src/content/reviews/` (el nombre del fichero será la URL):
+Copia la plantilla de `src/content/templates/` (`restaurant-review-template.md` o
+`restaurant-suggestion-template.md`) en `src/content/reviews/` o `src/content/suggestions/`. El nombre del
+fichero será la URL. Lo mínimo de una reseña:
 
 ```markdown
 ---
 title: 'Casa Romántica'
 description: 'Una frase que resuma la experiencia.'
+address: 'Paseo Marítimo, 15'
+locality: 'Gran Canaria'
 pubDate: '2025-10-10'
-visitDate: '2025-10-04'                         # opcional
-image: '../../assets/images/casa-romantica.jpg' # opcional, ruta relativa
-averagePrice: 50                                # opcional, € por persona
-categoryArray: ['mediterráneo', 'fusión']       # opcional
-important: true                                 # opcional, aparece en «Destacadas»
+image: '../../assets/images/restaurants/casa-romantica.jpg' # opcional, ruta relativa
+rating:                                                     # opcional, de 1 a 10
+  food: 9
+  service: 9
+  ambiance: 8
+  value: 9
 ---
 
 Texto de la reseña en Markdown…
 ```
 
-Las categorías alimentan los filtros del buscador, y el precio medio se muestra como rango (€ – €€€€).
+Campos opcionales:
+
+- `visitDate`, `updatedDate` y `averagePrice` (€ por persona, se muestra como rango de € a €€€€).
+- `categoryArray`: alimenta el buscador y las páginas de `/categorias`.
+- `important`: sale en «Destacadas». `favorite`: sale en el carrusel de favoritos. `trending`: etiqueta «Tendencia».
+- `rating`: la ficha muestra cada aspecto, la media y un veredicto. La media aparece en tarjetas y buscador.
+- `coordinates` (`lat`, `lng`): sitúa la reseña en el mapa del buscador.
+- `restaurantLinks` (`website`, `reservations`, `menu`, `instagram`, `googleMaps`) y `anecdote`.
+- `instagramPostId`: el código tras `/p/` en la URL de la publicación. Incrusta la publicación y, si
+  `INSTAGRAM_ACCESS_TOKEN` está configurado (ver `.env.example`), sus visualizaciones mediante
+  `/api/instagram-views`. Es la única ruta que no es estática: corre como función de Vercel.
 
 
 ## 🧞 Comandos
@@ -97,12 +120,14 @@ Todos los comandos se ejecutan desde la raiz del proyecto, en una terminal indic
 | `pnpm astro ...`          | Ejecuta comandos de Astro como `astro add...`, `astro check` |
 
 El build usa el adaptador de Vercel (con Web Analytics), que no admite `astro preview`. Los tests de
-`src/content/reviews.test.ts` validan el frontmatter de cada reseña contra el esquema compartido de
-`src/content/review-schema.ts`. El CI (`.github/workflows/ci.yml`) ejecuta `check`, `test:run` y `build`.
+`src/content/collections.test.ts` validan el frontmatter de cada reseña y sugerencia contra sus esquemas
+compartidos y comprueban que sus imágenes existen. `src/lib/rating.test.ts` cubre la nota media, el veredicto
+y los slugs de categoría. El CI (`.github/workflows/ci.yml`) ejecuta `check`, `test:run` y `build`.
 
 
 ## Créditos
 
-Construida con [Astro](https://astro.build) y [Tailwind CSS](https://tailwindcss.com). Tipografías
+Construida con [Astro](https://astro.build), [Tailwind CSS](https://tailwindcss.com) y
+[Leaflet](https://leafletjs.com) con mapas de [OpenStreetMap](https://www.openstreetmap.org). Tipografías
 [Fraunces](https://fonts.google.com/specimen/Fraunces) e [Inter](https://rsms.me/inter/), servidas
 localmente con Fontsource.

@@ -1,14 +1,18 @@
 import { glob } from 'astro/loaders';
 import { defineCollection, z } from 'astro:content';
 import { reviewFields } from './content/review-schema';
+import { suggestionFields } from './content/suggestion-schema';
+
+// `image` es una ruta relativa a una imagen de `src/assets/` para que Astro la optimice.
 
 const reviews = defineCollection({
 	loader: glob({ base: './src/content/reviews', pattern: '**/*.{md,mdx}' }),
-	schema: ({ image }) =>
-		reviewFields.extend({
-			// Ruta relativa a una imagen de `src/assets/` para que Astro la optimice.
-			image: image().optional(),
-		}),
+	schema: ({ image }) => reviewFields.extend({ image: image().optional() }),
+});
+
+const suggestions = defineCollection({
+	loader: glob({ base: './src/content/suggestions', pattern: '**/*.{md,mdx}' }),
+	schema: ({ image }) => suggestionFields.extend({ image: image().optional() }),
 });
 
 const recipes = defineCollection({
@@ -23,4 +27,4 @@ const recipes = defineCollection({
 		}),
 });
 
-export const collections = { reviews, recipes };
+export const collections = { reviews, suggestions, recipes };

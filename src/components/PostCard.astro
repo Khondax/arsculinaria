@@ -5,6 +5,7 @@ import FormattedDate from './FormattedDate.astro';
 import Logo from './Logo.astro';
 import PriceLevel from './PriceLevel.astro';
 import { formatCategory } from '../lib/content';
+import { formatScore } from '../lib/rating';
 
 interface Props {
 	href: string;
@@ -14,6 +15,9 @@ interface Props {
 	image?: ImageMetadata;
 	averagePrice?: number;
 	categories?: string[];
+	locality?: string;
+	/** Nota media de 1 a 10. */
+	score?: number;
 	/** `feature` ocupa todo el ancho con la imagen al lado del texto. */
 	variant?: 'default' | 'feature';
 	/** Carga la imagen con prioridad (para la primera tarjeta visible). */
@@ -29,6 +33,8 @@ const {
 	image,
 	averagePrice,
 	categories = [],
+	locality,
+	score,
 	variant = 'default',
 	priority = false,
 	headingLevel: Heading = 'h3',
@@ -62,6 +68,15 @@ const isFeature = variant === 'feature';
 			)
 		}
 		<div class="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-ink/5 ring-inset"></div>
+		{
+			score !== undefined && (
+				<p class="absolute top-3 left-3 rounded-full bg-paper/90 px-3 py-1 text-sm font-semibold text-ink shadow-sm backdrop-blur-sm">
+					<span class="sr-only">Nota: </span>
+					{formatScore(score)}
+					<span class="font-normal text-muted">/10</span>
+				</p>
+			)
+		}
 	</div>
 
 	<div class:list={['flex flex-1 flex-col', !isFeature && 'pt-5']}>
@@ -97,6 +112,12 @@ const isFeature = variant === 'feature';
 		}
 
 		<p class:list={['text-sm text-muted', isFeature ? 'mt-6' : 'mt-4']}>
+			{locality && (
+				<>
+					{locality}
+					<span aria-hidden="true" class="mx-1.5">·</span>
+				</>
+			)}
 			<FormattedDate date={date} month="short" />
 		</p>
 	</div>

@@ -1,8 +1,9 @@
 ---
 import { Image } from 'astro:assets';
+import FavoritesCarousel from '../components/FavoritesCarousel.astro';
 import PostCard from '../components/PostCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getRecipes, getReviews } from '../lib/content';
+import { getRecipes, getReviews, reviewCardProps } from '../lib/content';
 import aboutPhoto from '../assets/images/nosotros.jpg';
 
 const MAX_FEATURED = 10;
@@ -16,6 +17,7 @@ const important = reviews.filter((review) => review.data.important);
 const featured = (important.length > 0 ? important : reviews).slice(0, MAX_FEATURED);
 const [lead, ...restFeatured] = featured;
 const latest = reviews.filter((review) => !featured.includes(review)).slice(0, MAX_LATEST);
+const favorites = reviews.filter((review) => review.data.favorite);
 
 const oldest = reviews.at(-1);
 const stats = [
@@ -79,13 +81,7 @@ const stats = [
 
 				<div class="mt-10">
 					<PostCard
-						href={`/reviews/${lead.id}/`}
-						title={lead.data.title}
-						description={lead.data.description}
-						date={lead.data.pubDate}
-						image={lead.data.image}
-						averagePrice={lead.data.averagePrice}
-						categories={lead.data.categoryArray}
+						{...reviewCardProps(lead)}
 						variant="feature"
 						priority
 					/>
@@ -95,17 +91,27 @@ const stats = [
 					<div class="mt-16 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
 						{restFeatured.map((review) => (
 							<PostCard
-								href={`/reviews/${review.id}/`}
-								title={review.data.title}
-								description={review.data.description}
-								date={review.data.pubDate}
-								image={review.data.image}
-								averagePrice={review.data.averagePrice}
-								categories={review.data.categoryArray}
+								{...reviewCardProps(review)}
 							/>
 						))}
 					</div>
 				)}
+			</section>
+		)
+	}
+
+	<!-- Favoritos -->
+	{
+		favorites.length > 0 && (
+			<section class="container-page mt-24" aria-labelledby="favoritos">
+				<div class="flex items-end justify-between gap-6 border-b border-line pb-6">
+					<h2 id="favoritos" class="text-3xl md:text-4xl">
+						Nuestros favoritos
+					</h2>
+				</div>
+				<div class="mt-10">
+					<FavoritesCarousel favorites={favorites} />
+				</div>
 			</section>
 		)
 	}
@@ -122,13 +128,7 @@ const stats = [
 				<div class="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
 					{latest.map((review) => (
 						<PostCard
-							href={`/reviews/${review.id}/`}
-							title={review.data.title}
-							description={review.data.description}
-							date={review.data.pubDate}
-							image={review.data.image}
-							averagePrice={review.data.averagePrice}
-							categories={review.data.categoryArray}
+							{...reviewCardProps(review)}
 						/>
 					))}
 				</div>

@@ -1,0 +1,133 @@
+---
+// Ficha de una reseña: datos del restaurante, puntuación por aspectos con su veredicto y enlaces.
+import type { Review } from '../lib/content';
+import FormattedDate from './FormattedDate.astro';
+import PriceLevel from './PriceLevel.astro';
+import { formatPrice } from '../lib/content';
+import { RATING_ASPECTS, formatScore, ratingAverage, ratingVerdict } from '../lib/rating';
+
+interface Props {
+	data: Review['data'];
+}
+
+const { title, locality, address, visitDate, averagePrice, rating, restaurantLinks: links } = Astro.props.data;
+
+const average = rating && ratingAverage(rating);
+
+const linkButtons = [
+	links?.reservations && { href: links.reservations, label: 'Reservar' },
+	links?.menu && { href: links.menu, label: 'Carta' },
+	links?.googleMaps && { href: links.googleMaps, label: 'Ver en el mapa' },
+	links?.instagram && { href: links.instagram, label: 'Instagram' },
+].filter((link): link is { href: string; label: string } => Boolean(link));
+---
+
+<section class="rounded-3xl border border-line bg-surface p-6" aria-labelledby="ficha">
+	<h2 id="ficha" class="eyebrow font-sans">Ficha</h2>
+
+	{
+		average !== undefined && (
+			<div class="mt-5 flex items-center gap-4 border-b border-line pb-5">
+				<p class="font-display text-5xl leading-none text-ink">
+					<span class="sr-only">Nota media: </span>
+					{formatScore(average)}
+					<span class="text-lg text-muted">/10</span>
+				</p>
+				<p class="text-sm font-semibold tracking-wide text-accent uppercase">{ratingVerdict(average)}</p>
+			</div>
+		)
+	}
+
+	<dl class="mt-5 space-y-4 text-[0.95rem]">
+		<div>
+			<dt class="text-xs font-medium tracking-wide text-muted uppercase">Restaurante</dt>
+			<dd class="mt-0.5 font-medium text-ink">{title}</dd>
+		</div>
+		<div>
+			<dt class="text-xs font-medium tracking-wide text-muted uppercase">Dirección</dt>
+			<dd class="mt-0.5 text-ink-soft">{address}, {locality}</dd>
+		</div>
+		{
+			visitDate && (
+				<div>
+					<dt class="text-xs font-medium tracking-wide text-muted uppercase">Visitado</dt>
+					<dd class="mt-0.5 text-ink-soft">
+						<FormattedDate date={visitDate} />
+					</dd>
+				</div>
+			)
+		}
+		{
+			averagePrice && (
+				<div>
+					<dt class="text-xs font-medium tracking-wide text-muted uppercase">Precio medio</dt>
+					<dd class="mt-0.5 flex items-baseline gap-2 text-ink-soft">
+						{formatPrice(averagePrice)} por persona
+						<span aria-hidden="true" class="ml-auto text-sm text-accent">
+							<PriceLevel price={averagePrice} />
+						</span>
+					</dd>
+				</div>
+			)
+		}
+		{
+			links?.website && (
+				<div>
+					<dt class="text-xs font-medium tracking-wide text-muted uppercase">Web</dt>
+					<dd class="mt-0.5 truncate">
+						<a
+							href={links.website}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-accent underline decoration-1 underline-offset-4 hover:text-accent-dark"
+						>
+							{links.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+						</a>
+					</dd>
+				</div>
+			)
+		}
+	</dl>
+
+	{
+		rating && (
+			<div class="mt-6 border-t border-line pt-5">
+				<h3 class="text-xs font-medium tracking-wide text-muted uppercase font-sans">Puntuaciones</h3>
+				<dl class="mt-4 space-y-3.5">
+					{RATING_ASPECTS.map(({ key, label }) => (
+						<div>
+							<div class="flex justify-between text-sm">
+								<dt class="text-ink-soft">{label}</dt>
+								<dd class="font-medium text-ink">{rating[key]}/10</dd>
+							</div>
+							<div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-sand" aria-hidden="true">
+								<div class="h-full rounded-full bg-accent" style={`width: ${rating[key] * 10}%`} />
+							</div>
+						</div>
+					))}
+				</dl>
+			</div>
+		)
+	}
+
+	{
+		linkButtons.length > 0 && (
+			<ul class="mt-6 flex flex-wrap gap-2 border-t border-line pt-5">
+				{linkButtons.map((link) => (
+					<li>
+						<a
+							href={link.href}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-ink"
+						>
+							{link.label}
+							<span aria-hidden="true">↗</span>
+							<span class="sr-only">(se abre en una pestaña nueva)</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+</section>

@@ -5,20 +5,22 @@ import Logo from '../components/Logo.astro';
 import PageHeader from '../components/PageHeader.astro';
 import PriceLevel from '../components/PriceLevel.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { formatCategory, getCategories, getReviews, normalizeCategory, priceLevel } from '../lib/content';
+import { formatCategory, getCategories, getReviews, normalizeCategory, priceLevel, reviewScore } from '../lib/content';
+import { formatScore } from '../lib/rating';
 
 const reviews = await getReviews();
 const categories = getCategories(reviews);
+const localities = [...new Set(reviews.map((review) => review.data.locality))].sort((a, b) => a.localeCompare(b, 'es'));
 
 const fieldClass =
 	'h-11 rounded-full border border-line bg-surface px-4 text-sm text-ink transition-colors outline-none hover:border-muted/60 focus:border-accent focus-visible:outline-none focus:ring-2 focus:ring-accent/20';
 ---
 
-<BaseLayout title="Buscador" description="Encuentra restaurantes por nombre, tipo de cocina o precio.">
+<BaseLayout title="Buscador" description="Encuentra restaurantes por nombre, localidad, tipo de cocina o precio.">
 	<PageHeader
 		eyebrow="Buscador"
 		title="¿Dónde comemos hoy?"
-		intro="Filtra por nombre, tipo de cocina o precio para encontrar el sitio perfecto."
+		intro="Filtra por nombre, localidad, tipo de cocina o precio para encontrar el sitio perfecto. ¿No te decides? Deja que elijamos por ti."
 	/>
 
 	<section class="container-page" aria-label="Buscador de reseñas">
@@ -46,8 +48,15 @@ const fieldClass =
 					/>
 				</label>
 
-				<div class="flex gap-3">
-					<label class="flex-1 md:flex-none">
+				<div class="grid grid-cols-2 gap-3 sm:flex">
+					<label class="sm:flex-1 md:flex-none">
+						<span class="sr-only">Localidad</span>
+						<select name="localidad" class:list={[fieldClass, 'w-full pr-9']}>
+							<option value="">Localidad</option>
+							{localities.map((locality) => <option value={locality}>{locality}</option>)}
+						</select>
+					</label>
+					<label class="sm:flex-1 md:flex-none">
 						<span class="sr-only">Precio</span>
 						<select name="precio" class:list={[fieldClass, 'w-full pr-9']}>
 							<option value="">Precio</option>
@@ -57,11 +66,12 @@ const fieldClass =
 							<option value="4">€€€€ · más de 90 €</option>
 						</select>
 					</label>
-					<label class="flex-1 md:flex-none">
+					<label class="col-span-2 sm:flex-1 md:flex-none">
 						<span class="sr-only">Ordenar</span>
 						<select name="orden" class:list={[fieldClass, 'w-full pr-9']}>
 							<option value="recientes">Más recientes</option>
 							<option value="antiguas">Más antiguas</option>
+							<option value="nota">Mejor puntuadas</option>
 							<option value="nombre">Nombre (A–Z)</option>
 							<option value="precio-asc">Precio: de menor a mayor</option>
 							<option value="precio-desc">Precio: de mayor a menor</option>
@@ -89,20 +99,36 @@ const fieldClass =
 			}
 		</form>
 
-		<p class="mt-10 text-sm text-muted" aria-live="polite" data-search-count>
-			{reviews.length} reseñas
-		</p>
+		<div class="mt-10 flex flex-wrap items-center justify-between gap-4">
+			<p class="text-sm text-muted" aria-live="polite" data-search-count>
+				{reviews.length} reseñas
+			</p>
+			<button
+				type="button"
+				class="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+				data-search-surprise
+			>
+				Sorpréndeme <span aria-hidden="true">→</span>
+			</button>
+		</div>
 
 		<ul class="mt-4 divide-y divide-line border-y border-line" data-search-results>
 			{
 				reviews.map((review) => {
-					const { title, description, categoryArray, averagePrice, pubDate, image } = review.data;
+					const { title, description, categoryArray, averagePrice, pubDate, image, locality, coordinates } =
+						review.data;
 					const cats = categoryArray.map(normalizeCategory);
+					const score = reviewScore(review);
 					return (
 						<li
 							class="group relative"
-							data-search={[title, description, ...cats].join(' ')}
+							data-search={[title, description, locality, ...cats].join(' ')}
 							data-title={title}
+							data-href={`/reviews/${review.id}/`}
+							data-locality={locality}
+							data-score={score ?? ''}
+							data-lat={coordinates?.lat}
+							data-lng={coordinates?.lng}
 							data-categories={cats.join('|')}
 							data-price={averagePrice ?? ''}
 							data-price-level={averagePrice ? priceLevel(averagePrice) : ''}
@@ -132,9 +158,15 @@ const fieldClass =
 										</a>
 									</h2>
 									<p class="mt-1 truncate text-sm text-muted">
-										{cats.length > 0 ? cats.map(formatCategory).join(' · ') : description}
+										{[locality, ...cats.map(formatCategory)].join(' · ')}
 									</p>
 								</div>
+								{score !== undefined && (
+									<p class="shrink-0 font-display text-xl text-ink sm:text-2xl">
+										<span class="sr-only">Nota: </span>
+										{formatScore(score)}
+									</p>
+								)}
 								<div class="hidden shrink-0 flex-col items-end gap-1 text-sm sm:flex">
 									{averagePrice && <PriceLevel price={averagePrice} class="font-medium text-accent" />}
 									<FormattedDate date={pubDate} month="short" class="text-muted" />
@@ -164,6 +196,14 @@ const fieldClass =
 			</button>
 		</div>
 	</section>
+
+	<section class="container-page mt-20" aria-labelledby="mapa">
+		<div class="flex items-end justify-between gap-6 border-b border-line pb-6">
+			<h2 id="mapa" class="text-3xl md:text-4xl">En el mapa</h2>
+			<p class="text-sm text-muted">Muestra los resultados de la búsqueda</p>
+		</div>
+		<div class="relative z-0 mt-8 h-[26rem] overflow-hidden rounded-3xl border border-line bg-sand" data-search-map></div>
+	</section>
 </BaseLayout>
 
 <style>
@@ -184,11 +224,15 @@ const fieldClass =
 </style>
 
 <script>
+	import type { Map as LeafletMap, LayerGroup } from 'leaflet';
+
 	const form = document.querySelector<HTMLFormElement>('[data-search-form]');
 	const list = document.querySelector<HTMLUListElement>('[data-search-results]');
 	const count = document.querySelector<HTMLElement>('[data-search-count]');
 	const empty = document.querySelector<HTMLElement>('[data-search-empty]');
 	const reset = document.querySelector<HTMLButtonElement>('[data-search-reset]');
+	const surprise = document.querySelector<HTMLButtonElement>('[data-search-surprise]');
+	const mapElement = document.querySelector<HTMLElement>('[data-search-map]');
 
 	const normalize = (text: string) =>
 		text
@@ -197,15 +241,22 @@ const fieldClass =
 			.toLowerCase()
 			.trim();
 
+	const escapeHtml = (text: string) =>
+		text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
 	if (form && list && count && empty) {
 		const items = [...list.querySelectorAll<HTMLLIElement>('li')].map((el) => ({
 			el,
 			text: normalize(el.dataset.search ?? ''),
 			title: el.dataset.title ?? '',
+			href: el.dataset.href ?? '',
+			locality: el.dataset.locality ?? '',
 			categories: (el.dataset.categories ?? '').split('|').filter(Boolean),
 			price: el.dataset.price ? Number(el.dataset.price) : null,
 			priceLevel: el.dataset.priceLevel ?? '',
+			score: el.dataset.score ? Number(el.dataset.score) : null,
 			date: Number(el.dataset.date),
+			position: el.dataset.lat && el.dataset.lng ? ([Number(el.dataset.lat), Number(el.dataset.lng)] as [number, number]) : null,
 		}));
 
 		type Item = (typeof items)[number];
@@ -213,13 +264,14 @@ const fieldClass =
 		const sorters: Record<string, (a: Item, b: Item) => number> = {
 			recientes: (a, b) => b.date - a.date,
 			antiguas: (a, b) => a.date - b.date,
+			// Las reseñas sin nota o sin precio van siempre al final.
+			nota: (a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity),
 			nombre: (a, b) => a.title.localeCompare(b.title, 'es'),
-			// Las reseñas sin precio van siempre al final.
 			'precio-asc': (a, b) => (a.price ?? Infinity) - (b.price ?? Infinity),
 			'precio-desc': (a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity),
 		};
 
-		const fields = ['q', 'precio', 'orden', 'categoria'] as const;
+		const fields = ['q', 'localidad', 'precio', 'orden', 'categoria'] as const;
 
 		// Restaura los filtros desde la URL (?q=...&categoria=...)
 		const params = new URLSearchParams(location.search);
@@ -232,18 +284,59 @@ const fieldClass =
 			}
 		}
 
+		// Mapa: Leaflet se carga aparte para no retrasar la lista. Muestra los resultados visibles.
+		let map: LeafletMap | undefined;
+		let markers: LayerGroup | undefined;
+		let visible: Item[] = items;
+
+		const drawMarkers = async () => {
+			if (!map || !markers) return;
+			const L = await import('leaflet');
+			markers.clearLayers();
+			const located = visible.filter((item) => item.position);
+			for (const item of located) {
+				const score = item.score === null ? '' : ` · ${item.score.toLocaleString('es-ES', { minimumFractionDigits: 1 })}/10`;
+				L.circleMarker(item.position!, {
+					radius: 9,
+					color: '#fffdf9',
+					weight: 2,
+					fillColor: '#a2452a',
+					fillOpacity: 1,
+				})
+					.bindPopup(`<a href="${item.href}"><strong>${escapeHtml(item.title)}</strong></a><br>${escapeHtml(item.locality)}${score}`)
+					.addTo(markers);
+			}
+			if (located.length > 0) {
+				map.fitBounds(L.latLngBounds(located.map((item) => item.position!)), { padding: [40, 40], maxZoom: 13 });
+			}
+		};
+
+		if (mapElement) {
+			Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]).then(([L]) => {
+				map = L.map(mapElement, { scrollWheelZoom: false }).setView([40, -3.7], 5);
+				L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+					maxZoom: 18,
+				}).addTo(map);
+				markers = L.layerGroup().addTo(map);
+				drawMarkers();
+			});
+		}
+
 		const update = () => {
 			const data = new FormData(form);
 			const query = normalize(String(data.get('q') ?? ''));
+			const locality = String(data.get('localidad') ?? '');
 			const price = String(data.get('precio') ?? '');
 			const category = String(data.get('categoria') ?? '');
 			const order = String(data.get('orden') ?? 'recientes');
 			const terms = query.split(/\s+/).filter(Boolean);
 
-			const visible = items
+			visible = items
 				.filter((item) => {
 					const matches =
 						terms.every((term) => item.text.includes(term)) &&
+						(!locality || item.locality === locality) &&
 						(!price || item.priceLevel === price) &&
 						(!category || item.categories.includes(category));
 					item.el.hidden = !matches;
@@ -254,13 +347,14 @@ const fieldClass =
 			list.append(...visible.map((item) => item.el));
 			list.hidden = visible.length === 0;
 			empty.classList.toggle('hidden', visible.length !== 0);
+			if (surprise) surprise.disabled = visible.length === 0;
 			count.textContent =
-				visible.length === items.length
-					? `${items.length} reseñas`
-					: `${visible.length} de ${items.length} reseñas`;
+				visible.length === items.length ? `${items.length} reseñas` : `${visible.length} de ${items.length} reseñas`;
+			drawMarkers();
 
 			const next = new URLSearchParams();
 			if (query) next.set('q', String(data.get('q')));
+			if (locality) next.set('localidad', locality);
 			if (price) next.set('precio', price);
 			if (category) next.set('categoria', category);
 			if (order !== 'recientes') next.set('orden', order);
@@ -273,6 +367,11 @@ const fieldClass =
 		reset?.addEventListener('click', () => {
 			form.reset();
 			update();
+		});
+		// Abre una reseña al azar entre los resultados actuales.
+		surprise?.addEventListener('click', () => {
+			const pick = visible[Math.floor(Math.random() * visible.length)];
+			if (pick) location.href = pick.href;
 		});
 
 		update();
