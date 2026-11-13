@@ -1,0 +1,29 @@
+---
+import Logo from '../components/Logo.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Página no encontrada" description="Esta página no existe.">
+	<section class="container-page flex flex-col items-center py-28 text-center md:py-40">
+		<Logo class="size-14" />
+		<p class="eyebrow mt-8">Error 404</p>
+		<h1 class="mt-4 text-5xl md:text-6xl">Esta mesa no está reservada</h1>
+		<p class="mt-6 max-w-md text-lg text-muted">
+			La página que buscas no existe o ha cambiado de sitio. Volvamos a la carta.
+		</p>
+		<div class="mt-10 flex flex-wrap justify-center gap-3">
+			<a
+				href="/"
+				class="rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-colors hover:bg-accent"
+			>
+				Ir a la portada
+			</a>
+			<a
+				href="/buscador"
+				class="rounded-full border border-line bg-surface px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
+			>
+				Buscar un restaurante
+			</a>
+		</div>
+	</section>
+</BaseLayout>

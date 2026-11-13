@@ -1,21 +1,33 @@
 ---
-import { type CollectionEntry, getCollection } from 'astro:content';
-import BlogPost from '../../layouts/ReviewPost.astro';
+import type { GetStaticPaths } from 'astro';
 import { render } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+import { getRecipes, type Recipe } from '../../lib/content';
 
-export async function getStaticPaths() {
-	const posts = await getCollection('recipes');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
+export const getStaticPaths = (async () => {
+	const recipes = await getRecipes();
+	return recipes.map((recipe) => ({
+		params: { slug: recipe.id },
+		props: { recipe },
 	}));
-}
-type Props = CollectionEntry<'recipes'>;
+}) satisfies GetStaticPaths;
 
-const post = Astro.props;
-const { Content } = await render(post);
+interface Props {
+	recipe: Recipe;
+}
+
+const { recipe } = Astro.props;
+const { Content } = await render(recipe);
+const { data } = recipe;
 ---
 
-<BlogPost {...post.data}>
+<PostLayout
+	title={data.title}
+	description={data.description}
+	pubDate={data.pubDate}
+	updatedDate={data.updatedDate}
+	image={data.image}
+	back={{ href: '/recipes', label: 'Todas las recetas' }}
+>
 	<Content />
-</BlogPost>
+</PostLayout>

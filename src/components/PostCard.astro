@@ -1,0 +1,103 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import FormattedDate from './FormattedDate.astro';
+import Logo from './Logo.astro';
+import PriceLevel from './PriceLevel.astro';
+import { formatCategory } from '../lib/content';
+
+interface Props {
+	href: string;
+	title: string;
+	description?: string;
+	date: Date;
+	image?: ImageMetadata;
+	averagePrice?: number;
+	categories?: string[];
+	/** `feature` ocupa todo el ancho con la imagen al lado del texto. */
+	variant?: 'default' | 'feature';
+	/** Carga la imagen con prioridad (para la primera tarjeta visible). */
+	priority?: boolean;
+	headingLevel?: 'h2' | 'h3';
+}
+
+const {
+	href,
+	title,
+	description,
+	date,
+	image,
+	averagePrice,
+	categories = [],
+	variant = 'default',
+	priority = false,
+	headingLevel: Heading = 'h3',
+} = Astro.props;
+
+const isFeature = variant === 'feature';
+---
+
+<article
+	class:list={[
+		'group relative flex flex-col',
+		isFeature && 'gap-6 md:grid md:grid-cols-[1.35fr_1fr] md:items-center md:gap-12',
+	]}
+>
+	<div class="relative aspect-[3/2] overflow-hidden rounded-2xl bg-sand">
+		{
+			image ? (
+				<Image
+					src={image}
+					alt=""
+					widths={isFeature ? [480, 800, 1200] : [400, 600, 800]}
+					sizes={isFeature ? '(min-width: 768px) 58vw, 100vw' : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'}
+					loading={priority ? 'eager' : 'lazy'}
+					fetchpriority={priority ? 'high' : 'auto'}
+					class="size-full object-cover transition-transform duration-700 ease-out-soft group-hover:scale-[1.04]"
+				/>
+			) : (
+				<div class="grid size-full place-items-center">
+					<Logo class="size-12 opacity-40" />
+				</div>
+			)
+		}
+		<div class="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-ink/5 ring-inset"></div>
+	</div>
+
+	<div class:list={['flex flex-1 flex-col', !isFeature && 'pt-5']}>
+		{
+			(categories.length > 0 || averagePrice) && (
+				<p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium tracking-wide text-muted uppercase">
+					{categories.length > 0 && (
+						<span class="text-accent">{categories.map(formatCategory).join(' · ')}</span>
+					)}
+					{categories.length > 0 && averagePrice && <span aria-hidden="true">/</span>}
+					{averagePrice && <PriceLevel price={averagePrice} class="tracking-normal" />}
+				</p>
+			)
+		}
+
+		<Heading
+			class:list={[
+				'mt-2 text-ink transition-colors duration-200 group-hover:text-accent',
+				isFeature ? 'text-3xl md:text-4xl lg:text-5xl' : 'text-2xl',
+			]}
+		>
+			<a href={href} class="after:absolute after:inset-0">
+				{title}
+			</a>
+		</Heading>
+
+		{
+			description && (
+				<p class:list={['mt-3 text-muted', isFeature ? 'text-lg leading-relaxed' : 'line-clamp-2 text-[0.95rem]']}>
+					{description}
+				</p>
+			)
+		}
+
+		<p class:list={['text-sm text-muted', isFeature ? 'mt-6' : 'mt-4']}>
+			<FormattedDate date={date} month="short" />
+		</p>
+	</div>
+</article>

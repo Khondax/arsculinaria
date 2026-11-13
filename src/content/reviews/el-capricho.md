@@ -3,7 +3,7 @@ title: 'El Capricho'
 description: 'Lorem ipsum dolor sit amet'
 pubDate: 'Sep 14 2025'
 visitDate: 'Oct 04 2025'
-image: '/blog-placeholder-4.jpg'
+image: '../../assets/images/blog-placeholder-4.jpg'
 averagePrice: 100
 categoryArray: ['carne']
 important: true

@@ -1,33 +1,71 @@
 ---
-import Layout from '../layouts/ReviewPost.astro';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import photo from '../assets/images/nosotros.jpg';
 ---
 
-<Layout
-	title="¿Quieres saber algo sobre nosotros?"
-	description="Sobre nosotros"
-	pubDate={new Date('2025-08-19')}
-	updatedDate={}
-	image="/blog-placeholder-about.jpg"
+<BaseLayout
+	title="Sobre nosotros"
+	description="Somos Miguel y Lucía, «MiLu». Vivimos en Gran Canaria y compartimos el gusto por la cocina y los viajes."
+	image={photo}
 >
-	<p>
-		Somos Miguel y Lucía, "MiLu" para abreviar, residimos en Gran Canaria y compartimos
-		el gusto por la cocina, viajar y los deportes, pero de esto último no hablaremos mucho 😅.
-	</p>
-	<p>
-		Siempre tratamos de dar a nuestros amigos la mejor opinión que podamos, con sinceridad y siendo
-		honestos. Hasta ahora nos organizamos con una lista de ubicaciones en Google Maps (que ya tiene
-		+440 sitios) y nuestra memoria, pero cada vez cuesta más recordarlo todo.
-	</p>
-	<p>
-		De ahí nace esta web, queremos llevar una especie de diario, organizado, sencillo y fácil de
-		seguir para tratar de llevar al día los establecimientos que vamos probando y quizá incluso que
-		amigos y familiares puedan disfrutar de restaurantes o viajes como lo hicimos nosotros.
-	</p>
-	<p>
-		No somos críticos gastronómicos ni lo pretendemos, pero nos gusta hablar de cocina y a veces
-		ponernos detrás de los fogones. Puede que algún día nos animemos con alguna receta.
-	</p>
-	<p>
-		Muchas gracias por llegar hasta aquí, esperamos ayudar y ¡que disfrutéis!
-	</p>
-</Layout>
+	<section class="container-page grid gap-12 pt-16 md:pt-24 lg:grid-cols-[1fr_1.1fr] lg:items-start lg:gap-20">
+		<div class="lg:sticky lg:top-28">
+			<Image
+				src={photo}
+				alt="Miguel y Lucía brindando con vino tinto en un restaurante"
+				widths={[480, 720, 960, 1280]}
+				sizes="(min-width: 1024px) 45vw, 100vw"
+				loading="eager"
+				fetchpriority="high"
+				class="aspect-[4/3] w-full rounded-3xl object-cover"
+			/>
+		</div>
+
+		<div>
+			<p class="eyebrow">Sobre nosotros</p>
+			<h1 class="mt-4 text-5xl md:text-6xl">
+				Somos Miguel y Lucía, <em class="font-normal text-accent italic">MiLu</em> para abreviar
+			</h1>
+
+			<div class="prose mt-10">
+				<p>
+					Vivimos en Gran Canaria y compartimos el gusto por la cocina, viajar y los deportes, aunque de
+					esto último no hablaremos mucho 😅.
+				</p>
+				<p>
+					Siempre tratamos de dar a nuestros amigos la mejor opinión que podamos, con sinceridad. Hasta
+					ahora nos organizábamos con una lista de ubicaciones en Google Maps (que ya tiene más de 440
+					sitios) y con nuestra memoria, pero cada vez cuesta más recordarlo todo.
+				</p>
+				<blockquote>
+					<p>Queremos llevar una especie de diario: organizado, sencillo y fácil de seguir.</p>
+				</blockquote>
+				<p>
+					De ahí nace esta web. La idea es llevar al día los sitios que vamos probando y, quizá, que
+					amigos y familiares puedan disfrutar de restaurantes o viajes como lo hicimos nosotros.
+				</p>
+				<p>
+					No somos críticos gastronómicos ni lo pretendemos, pero nos gusta hablar de cocina y a veces
+					ponernos detrás de los fogones. Puede que algún día nos animemos con alguna receta.
+				</p>
+				<p>Muchas gracias por llegar hasta aquí. Esperamos ayudaros, ¡y que disfrutéis!</p>
+			</div>
+
+			<div class="mt-12 flex flex-wrap gap-3">
+				<a
+					href="/reviews"
+					class="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-colors hover:bg-accent"
+				>
+					Leer nuestras reseñas
+				</a>
+				<a
+					href="/buscador"
+					class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
+				>
+					Buscar un sitio
+				</a>
+			</div>
+		</div>
+	</section>
+</BaseLayout>

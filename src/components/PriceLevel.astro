@@ -1,0 +1,18 @@
+---
+import { formatPrice, priceLevel } from '../lib/content';
+
+interface Props {
+	price: number;
+	class?: string;
+}
+
+const { price, class: className } = Astro.props;
+const level = priceLevel(price);
+---
+
+<span class={className} title={`Unos ${formatPrice(price)} por persona`}>
+	<span aria-hidden="true">
+		<span class="text-current">{'€'.repeat(level)}</span><span class="opacity-30">{'€'.repeat(4 - level)}</span>
+	</span>
+	<span class="sr-only">Unos {formatPrice(price)} por persona</span>
+</span>

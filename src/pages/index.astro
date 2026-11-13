@@ -1,108 +1,167 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { getCollection } from 'astro:content';
-import FormattedDate from '../components/FormattedDate.astro';
+import { Image } from 'astro:assets';
+import PostCard from '../components/PostCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getRecipes, getReviews } from '../lib/content';
+import aboutPhoto from '../assets/images/nosotros.jpg';
 
-const relevantPosts = (await getCollection('reviews')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-).filter((review, index) => review.data.important && index < 10);
+const MAX_FEATURED = 10;
+const MAX_LATEST = 3;
+
+const reviews = await getReviews();
+const recipes = await getRecipes();
+
+// Las 10 destacadas más recientes; si no hay ninguna marcada, las más recientes.
+const important = reviews.filter((review) => review.data.important);
+const featured = (important.length > 0 ? important : reviews).slice(0, MAX_FEATURED);
+const [lead, ...restFeatured] = featured;
+const latest = reviews.filter((review) => !featured.includes(review)).slice(0, MAX_LATEST);
+
+const oldest = reviews.at(-1);
+const stats = [
+	{ value: reviews.length, label: reviews.length === 1 ? 'reseña' : 'reseñas' },
+	{ value: recipes.length, label: recipes.length === 1 ? 'receta' : 'recetas' },
+	...(oldest ? [{ value: oldest.data.pubDate.getFullYear(), label: 'reseñando desde' }] : []),
+];
 ---
 
-<!doctype html>
-<html lang="es">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
+<BaseLayout>
+	<!-- Hero -->
+	<section class="container-page pt-16 pb-20 md:pt-28 md:pb-28">
+		<p class="eyebrow">Diario gastronómico · Gran Canaria</p>
+		<h1 class="mt-6 max-w-4xl text-5xl leading-[1.02] sm:text-6xl md:text-7xl lg:text-8xl">
+			Bienvenidos a <em class="font-normal text-accent italic">nuestra mesa</em>
+		</h1>
+		<p class="mt-8 max-w-xl text-lg leading-relaxed text-muted md:text-xl">
+			Somos Miguel y Lucía. Aquí guardamos los restaurantes que vamos probando, con lo que más nos gustó
+			y lo que no, para que podáis disfrutarlos tanto como nosotros.
+		</p>
+
+		<div class="mt-10 flex flex-wrap items-center gap-3">
+			<a
+				href="/reviews"
+				class="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-colors hover:bg-accent"
+			>
+				Ver todas las reseñas
+			</a>
+			<a
+				href="/buscador"
+				class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
+			>
+				Buscar un sitio
+			</a>
+		</div>
+
+		<dl class="mt-16 flex flex-wrap gap-x-12 gap-y-6 border-t border-line pt-8">
+			{
+				stats.map((stat) => (
+					<div class="flex flex-col-reverse">
+						<dt class="text-sm text-muted">{stat.label}</dt>
+						<dd class="font-display text-4xl text-ink">{stat.value}</dd>
+					</div>
+				))
 			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 1080px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>Bienvenidos a nuestra mesa 🍴 !</h1>
-			
-			<p>
-				Por aquí dejamos las últimas 10 reseñas más relevantes.
-			</p>
-		
-			</br>
-			
-			<section>
-				<ul>
-					{
-						relevantPosts.map((post) => (
-							<li>
-								<a href={`/reviews/${post.id}/`}>
-									<img width={1080} height={360} src={post.data.image} alt="" />
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										Fecha de publicación: <FormattedDate date={post.data.pubDate} />
-									</p>
-								</a>
-							</li>
-						))
-					}
-				</ul>
+		</dl>
+	</section>
+
+	<!-- Destacadas -->
+	{
+		lead && (
+			<section class="container-page" aria-labelledby="destacadas">
+				<div class="flex items-end justify-between gap-6 border-b border-line pb-6">
+					<h2 id="destacadas" class="text-3xl md:text-4xl">
+						Destacadas
+					</h2>
+					<a href="/reviews" class="text-sm font-medium text-accent transition-colors hover:text-accent-dark">
+						Ver todas →
+					</a>
+				</div>
+
+				<div class="mt-10">
+					<PostCard
+						href={`/reviews/${lead.id}/`}
+						title={lead.data.title}
+						description={lead.data.description}
+						date={lead.data.pubDate}
+						image={lead.data.image}
+						averagePrice={lead.data.averagePrice}
+						categories={lead.data.categoryArray}
+						variant="feature"
+						priority
+					/>
+				</div>
+
+				{restFeatured.length > 0 && (
+					<div class="mt-16 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+						{restFeatured.map((review) => (
+							<PostCard
+								href={`/reviews/${review.id}/`}
+								title={review.data.title}
+								description={review.data.description}
+								date={review.data.pubDate}
+								image={review.data.image}
+								averagePrice={review.data.averagePrice}
+								categories={review.data.categoryArray}
+							/>
+						))}
+					</div>
+				)}
 			</section>
-		</main>
-		<Footer />
-	</body>
-</html>
+		)
+	}
+
+	<!-- Últimas -->
+	{
+		latest.length > 0 && (
+			<section class="container-page mt-24" aria-labelledby="recientes">
+				<div class="flex items-end justify-between gap-6 border-b border-line pb-6">
+					<h2 id="recientes" class="text-3xl md:text-4xl">
+						Recién publicadas
+					</h2>
+				</div>
+				<div class="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+					{latest.map((review) => (
+						<PostCard
+							href={`/reviews/${review.id}/`}
+							title={review.data.title}
+							description={review.data.description}
+							date={review.data.pubDate}
+							image={review.data.image}
+							averagePrice={review.data.averagePrice}
+							categories={review.data.categoryArray}
+						/>
+					))}
+				</div>
+			</section>
+		)
+	}
+
+	<!-- Sobre nosotros -->
+	<section class="container-page mt-28">
+		<div class="grid overflow-hidden rounded-3xl bg-ink text-paper md:grid-cols-2">
+			<div class="relative aspect-[4/3] md:aspect-auto md:min-h-[28rem]">
+				<Image
+					src={aboutPhoto}
+					alt="Miguel y Lucía brindando con vino tinto en un restaurante"
+					widths={[480, 720, 960]}
+					sizes="(min-width: 768px) 50vw, 100vw"
+					class="absolute inset-0 size-full object-cover"
+				/>
+			</div>
+			<div class="flex flex-col justify-center p-8 sm:p-12 lg:p-16">
+				<p class="eyebrow text-accent-soft">Quiénes somos</p>
+				<h2 class="mt-4 text-4xl text-paper md:text-5xl">Más de 440 sitios en nuestra lista</h2>
+				<p class="mt-6 leading-relaxed text-paper/75">
+					No somos críticos gastronómicos ni lo pretendemos. Solo queremos llevar un diario sencillo de los
+					sitios que probamos y compartirlo con quien le sirva.
+				</p>
+				<a
+					href="/about"
+					class="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-paper px-6 py-3 text-sm font-medium text-ink transition-colors hover:bg-accent-soft"
+				>
+					Conócenos <span aria-hidden="true">→</span>
+				</a>
+			</div>
+		</div>
+	</section>
+</BaseLayout>

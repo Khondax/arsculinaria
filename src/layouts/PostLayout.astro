@@ -1,0 +1,133 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import FormattedDate from '../components/FormattedDate.astro';
+import PriceLevel from '../components/PriceLevel.astro';
+import BaseLayout from './BaseLayout.astro';
+import { formatCategory, formatPrice } from '../lib/content';
+
+interface Props {
+	title: string;
+	description: string;
+	pubDate: Date;
+	updatedDate?: Date;
+	visitDate?: Date;
+	image?: ImageMetadata;
+	averagePrice?: number;
+	categories?: string[];
+	back: { href: string; label: string };
+}
+
+const {
+	title,
+	description,
+	pubDate,
+	updatedDate,
+	visitDate,
+	image,
+	averagePrice,
+	categories = [],
+	back,
+} = Astro.props;
+
+const hasFacts = Boolean(visitDate || averagePrice);
+---
+
+<BaseLayout title={title} description={description} image={image} type="article">
+	<article>
+		<header class="container-page pt-10 md:pt-16">
+			<a
+				href={back.href}
+				class="group inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-accent"
+			>
+				<span aria-hidden="true" class="transition-transform duration-300 group-hover:-translate-x-1">←</span>
+				{back.label}
+			</a>
+
+			<div class="mx-auto mt-10 max-w-3xl text-center md:mt-14">
+				{
+					categories.length > 0 && (
+						<ul class="flex flex-wrap justify-center gap-2" aria-label="Categorías">
+							{categories.map((category) => (
+								<li class="rounded-full bg-accent-soft px-3 py-1 text-xs font-medium tracking-wide text-accent-dark uppercase">
+									{formatCategory(category)}
+								</li>
+							))}
+						</ul>
+					)
+				}
+				<h1 class="mt-6 text-5xl md:text-6xl lg:text-7xl">{title}</h1>
+				<p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">{description}</p>
+				<p class="mt-6 text-sm text-muted">
+					Publicado el <FormattedDate date={pubDate} />
+					{
+						updatedDate && (
+							<>
+								<span aria-hidden="true" class="mx-2">·</span>
+								Actualizado el <FormattedDate date={updatedDate} />
+							</>
+						)
+					}
+				</p>
+			</div>
+		</header>
+
+		{
+			image && (
+				<figure class="container-page mt-12 md:mt-16">
+					<Image
+						src={image}
+						alt=""
+						widths={[640, 960, 1280, 1920]}
+						sizes="(min-width: 72rem) 68rem, 100vw"
+						loading="eager"
+						fetchpriority="high"
+						class="aspect-[16/9] w-full rounded-3xl object-cover md:aspect-[2/1]"
+					/>
+				</figure>
+			)
+		}
+
+		<div class="container-page mt-12 md:mt-16">
+			<div class="mx-auto max-w-[68ch]">
+				{
+					hasFacts && (
+						<dl
+							class:list={[
+								'mb-12 grid rounded-2xl border border-line bg-surface',
+								visitDate && averagePrice && 'grid-cols-2 divide-x divide-line',
+							]}
+						>
+							{visitDate && (
+								<div class="px-5 py-4">
+									<dt class="eyebrow text-[0.68rem] text-muted">Visitado</dt>
+									<dd class="mt-1 font-display text-lg text-ink">
+										<FormattedDate date={visitDate} />
+									</dd>
+								</div>
+							)}
+							{averagePrice && (
+								<div class="px-5 py-4">
+									<dt class="eyebrow text-[0.68rem] text-muted">Precio medio</dt>
+									<dd class="mt-1 flex items-baseline gap-2 font-display text-lg text-ink">
+										{formatPrice(averagePrice)}
+										<span class="font-sans text-sm text-muted">/ persona</span>
+										<span aria-hidden="true" class="ml-auto font-sans text-sm text-accent">
+											<PriceLevel price={averagePrice} />
+										</span>
+									</dd>
+								</div>
+							)}
+						</dl>
+					)
+				}
+
+				<div class="prose">
+					<slot />
+				</div>
+			</div>
+		</div>
+	</article>
+
+	<slot name="after" />
+</BaseLayout>

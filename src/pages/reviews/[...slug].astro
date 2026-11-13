@@ -1,21 +1,64 @@
 ---
-import { type CollectionEntry, getCollection } from 'astro:content';
-import ReviewPost from '../../layouts/ReviewPost.astro';
+import type { GetStaticPaths } from 'astro';
 import { render } from 'astro:content';
+import PostCard from '../../components/PostCard.astro';
+import PostLayout from '../../layouts/PostLayout.astro';
+import { getRelatedReviews, getReviews, type Review } from '../../lib/content';
 
-export async function getStaticPaths() {
-	const posts = await getCollection('reviews');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
+export const getStaticPaths = (async () => {
+	const reviews = await getReviews();
+	return reviews.map((review) => ({
+		params: { slug: review.id },
+		props: { review, related: getRelatedReviews(review, reviews) },
 	}));
-}
-type Props = CollectionEntry<'reviews'>;
+}) satisfies GetStaticPaths;
 
-const post = Astro.props;
-const { Content } = await render(post);
+interface Props {
+	review: Review;
+	related: Review[];
+}
+
+const { review, related } = Astro.props;
+const { Content } = await render(review);
+const { data } = review;
 ---
 
-<ReviewPost {...post.data}>
+<PostLayout
+	title={data.title}
+	description={data.description}
+	pubDate={data.pubDate}
+	updatedDate={data.updatedDate}
+	visitDate={data.visitDate}
+	image={data.image}
+	averagePrice={data.averagePrice}
+	categories={data.categoryArray}
+	back={{ href: '/reviews', label: 'Todas las reseñas' }}
+>
 	<Content />
-</ReviewPost>
+
+	{
+		related.length > 0 && (
+			<section slot="after" class="container-page mt-24 border-t border-line pt-16">
+				<div class="flex items-end justify-between gap-6">
+					<h2 class="text-3xl md:text-4xl">Sigue leyendo</h2>
+					<a href="/reviews" class="text-sm font-medium text-accent hover:text-accent-dark">
+						Ver todas →
+					</a>
+				</div>
+				<div class="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+					{related.map((r) => (
+						<PostCard
+							href={`/reviews/${r.id}/`}
+							title={r.data.title}
+							description={r.data.description}
+							date={r.data.pubDate}
+							image={r.data.image}
+							averagePrice={r.data.averagePrice}
+							categories={r.data.categoryArray}
+						/>
+					))}
+				</div>
+			</section>
+		)
+	}
+</PostLayout>

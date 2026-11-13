@@ -1,17 +1,15 @@
 ---
+import { SITE_LOCALE } from '../consts';
+
 interface Props {
 	date: Date;
+	month?: 'long' | 'short';
+	class?: string;
 }
 
-const { date } = Astro.props;
+const { date, month = 'long', class: className } = Astro.props;
 ---
 
-<time datetime={date.toISOString()}>
-	{
-		date.toLocaleDateString('es-ES', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric',
-		})
-	}
+<time datetime={date.toISOString()} class={className}>
+	{date.toLocaleDateString(SITE_LOCALE, { year: 'numeric', month, day: 'numeric' })}
 </time>

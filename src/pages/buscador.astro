@@ -1,0 +1,280 @@
+---
+import { Image } from 'astro:assets';
+import FormattedDate from '../components/FormattedDate.astro';
+import Logo from '../components/Logo.astro';
+import PageHeader from '../components/PageHeader.astro';
+import PriceLevel from '../components/PriceLevel.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatCategory, getCategories, getReviews, normalizeCategory, priceLevel } from '../lib/content';
+
+const reviews = await getReviews();
+const categories = getCategories(reviews);
+
+const fieldClass =
+	'h-11 rounded-full border border-line bg-surface px-4 text-sm text-ink transition-colors outline-none hover:border-muted/60 focus:border-accent focus-visible:outline-none focus:ring-2 focus:ring-accent/20';
+---
+
+<BaseLayout title="Buscador" description="Encuentra restaurantes por nombre, tipo de cocina o precio.">
+	<PageHeader
+		eyebrow="Buscador"
+		title="¿Dónde comemos hoy?"
+		intro="Filtra por nombre, tipo de cocina o precio para encontrar el sitio perfecto."
+	/>
+
+	<section class="container-page" aria-label="Buscador de reseñas">
+		<form class="flex flex-col gap-4" role="search" data-search-form>
+			<div class="flex flex-col gap-3 md:flex-row">
+				<label class="relative flex-1">
+					<span class="sr-only">Buscar por nombre, descripción o categoría</span>
+					<svg
+						viewBox="0 0 24 24"
+						class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"
+					>
+						<circle cx="11" cy="11" r="7"></circle>
+						<path stroke-linecap="round" d="m20 20-3.5-3.5"></path>
+					</svg>
+					<input
+						type="search"
+						name="q"
+						placeholder="Busca un restaurante, una cocina…"
+						autocomplete="off"
+						class:list={[fieldClass, 'w-full pl-11']}
+					/>
+				</label>
+
+				<div class="flex gap-3">
+					<label class="flex-1 md:flex-none">
+						<span class="sr-only">Precio</span>
+						<select name="precio" class:list={[fieldClass, 'w-full pr-9']}>
+							<option value="">Precio</option>
+							<option value="1">€ · menos de 25 €</option>
+							<option value="2">€€ · 25–50 €</option>
+							<option value="3">€€€ · 50–90 €</option>
+							<option value="4">€€€€ · más de 90 €</option>
+						</select>
+					</label>
+					<label class="flex-1 md:flex-none">
+						<span class="sr-only">Ordenar</span>
+						<select name="orden" class:list={[fieldClass, 'w-full pr-9']}>
+							<option value="recientes">Más recientes</option>
+							<option value="antiguas">Más antiguas</option>
+							<option value="nombre">Nombre (A–Z)</option>
+							<option value="precio-asc">Precio: de menor a mayor</option>
+							<option value="precio-desc">Precio: de mayor a menor</option>
+						</select>
+					</label>
+				</div>
+			</div>
+
+			{
+				categories.length > 0 && (
+					<fieldset class="flex flex-wrap gap-2">
+						<legend class="sr-only">Categoría</legend>
+						<label class="cursor-pointer">
+							<input type="radio" name="categoria" value="" class="sr-only" checked />
+							<span class="chip">Todas</span>
+						</label>
+						{categories.map((category) => (
+							<label class="cursor-pointer">
+								<input type="radio" name="categoria" value={category} class="sr-only" />
+								<span class="chip">{formatCategory(category)}</span>
+							</label>
+						))}
+					</fieldset>
+				)
+			}
+		</form>
+
+		<p class="mt-10 text-sm text-muted" aria-live="polite" data-search-count>
+			{reviews.length} reseñas
+		</p>
+
+		<ul class="mt-4 divide-y divide-line border-y border-line" data-search-results>
+			{
+				reviews.map((review) => {
+					const { title, description, categoryArray, averagePrice, pubDate, image } = review.data;
+					const cats = categoryArray.map(normalizeCategory);
+					return (
+						<li
+							class="group relative"
+							data-search={[title, description, ...cats].join(' ')}
+							data-title={title}
+							data-categories={cats.join('|')}
+							data-price={averagePrice ?? ''}
+							data-price-level={averagePrice ? priceLevel(averagePrice) : ''}
+							data-date={pubDate.valueOf()}
+						>
+							<div class="flex items-center gap-4 py-4 sm:gap-6">
+								<div class="size-16 shrink-0 overflow-hidden rounded-xl bg-sand sm:size-20">
+									{image ? (
+										<Image
+											src={image}
+											alt=""
+											width={160}
+											height={160}
+											loading="lazy"
+											class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+										/>
+									) : (
+										<div class="grid size-full place-items-center">
+											<Logo class="size-7 opacity-40" />
+										</div>
+									)}
+								</div>
+								<div class="min-w-0 flex-1">
+									<h2 class="truncate text-xl text-ink transition-colors group-hover:text-accent sm:text-2xl">
+										<a href={`/reviews/${review.id}/`} class="after:absolute after:inset-0">
+											{title}
+										</a>
+									</h2>
+									<p class="mt-1 truncate text-sm text-muted">
+										{cats.length > 0 ? cats.map(formatCategory).join(' · ') : description}
+									</p>
+								</div>
+								<div class="hidden shrink-0 flex-col items-end gap-1 text-sm sm:flex">
+									{averagePrice && <PriceLevel price={averagePrice} class="font-medium text-accent" />}
+									<FormattedDate date={pubDate} month="short" class="text-muted" />
+								</div>
+								<span
+									aria-hidden="true"
+									class="text-muted transition-transform duration-300 group-hover:translate-x-1 group-hover:text-accent"
+								>
+									→
+								</span>
+							</div>
+						</li>
+					);
+				})
+			}
+		</ul>
+
+		<div class="hidden py-20 text-center" data-search-empty>
+			<p class="font-display text-2xl text-ink">No hemos encontrado nada</p>
+			<p class="mt-2 text-muted">Prueba con otra búsqueda o quita algún filtro.</p>
+			<button
+				type="button"
+				class="mt-6 rounded-full border border-line bg-surface px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink"
+				data-search-reset
+			>
+				Limpiar filtros
+			</button>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	@reference '../styles/global.css';
+
+	.chip {
+		@apply inline-flex items-center rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink-soft transition-colors;
+	}
+	label:hover .chip {
+		@apply border-muted/60;
+	}
+	input:checked + .chip {
+		@apply border-ink bg-ink text-paper;
+	}
+	input:focus-visible + .chip {
+		@apply outline-2 outline-offset-2 outline-accent;
+	}
+</style>
+
+<script>
+	const form = document.querySelector<HTMLFormElement>('[data-search-form]');
+	const list = document.querySelector<HTMLUListElement>('[data-search-results]');
+	const count = document.querySelector<HTMLElement>('[data-search-count]');
+	const empty = document.querySelector<HTMLElement>('[data-search-empty]');
+	const reset = document.querySelector<HTMLButtonElement>('[data-search-reset]');
+
+	const normalize = (text: string) =>
+		text
+			.normalize('NFD')
+			.replace(/\p{Diacritic}/gu, '')
+			.toLowerCase()
+			.trim();
+
+	if (form && list && count && empty) {
+		const items = [...list.querySelectorAll<HTMLLIElement>('li')].map((el) => ({
+			el,
+			text: normalize(el.dataset.search ?? ''),
+			title: el.dataset.title ?? '',
+			categories: (el.dataset.categories ?? '').split('|').filter(Boolean),
+			price: el.dataset.price ? Number(el.dataset.price) : null,
+			priceLevel: el.dataset.priceLevel ?? '',
+			date: Number(el.dataset.date),
+		}));
+
+		type Item = (typeof items)[number];
+
+		const sorters: Record<string, (a: Item, b: Item) => number> = {
+			recientes: (a, b) => b.date - a.date,
+			antiguas: (a, b) => a.date - b.date,
+			nombre: (a, b) => a.title.localeCompare(b.title, 'es'),
+			// Las reseñas sin precio van siempre al final.
+			'precio-asc': (a, b) => (a.price ?? Infinity) - (b.price ?? Infinity),
+			'precio-desc': (a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity),
+		};
+
+		const fields = ['q', 'precio', 'orden', 'categoria'] as const;
+
+		// Restaura los filtros desde la URL (?q=...&categoria=...)
+		const params = new URLSearchParams(location.search);
+		for (const name of fields) {
+			const value = params.get(name);
+			if (value === null) continue;
+			const control = form.elements.namedItem(name);
+			if (control instanceof RadioNodeList || control instanceof HTMLInputElement || control instanceof HTMLSelectElement) {
+				control.value = value;
+			}
+		}
+
+		const update = () => {
+			const data = new FormData(form);
+			const query = normalize(String(data.get('q') ?? ''));
+			const price = String(data.get('precio') ?? '');
+			const category = String(data.get('categoria') ?? '');
+			const order = String(data.get('orden') ?? 'recientes');
+			const terms = query.split(/\s+/).filter(Boolean);
+
+			const visible = items
+				.filter((item) => {
+					const matches =
+						terms.every((term) => item.text.includes(term)) &&
+						(!price || item.priceLevel === price) &&
+						(!category || item.categories.includes(category));
+					item.el.hidden = !matches;
+					return matches;
+				})
+				.sort(sorters[order] ?? sorters.recientes);
+
+			list.append(...visible.map((item) => item.el));
+			list.hidden = visible.length === 0;
+			empty.classList.toggle('hidden', visible.length !== 0);
+			count.textContent =
+				visible.length === items.length
+					? `${items.length} reseñas`
+					: `${visible.length} de ${items.length} reseñas`;
+
+			const next = new URLSearchParams();
+			if (query) next.set('q', String(data.get('q')));
+			if (price) next.set('precio', price);
+			if (category) next.set('categoria', category);
+			if (order !== 'recientes') next.set('orden', order);
+			const search = next.toString();
+			history.replaceState(null, '', search ? `?${search}` : location.pathname);
+		};
+
+		form.addEventListener('input', update);
+		form.addEventListener('submit', (event) => event.preventDefault());
+		reset?.addEventListener('click', () => {
+			form.reset();
+			update();
+		});
+
+		update();
+	}
+</script>
